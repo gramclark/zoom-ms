@@ -1,0 +1,41 @@
+{
+  "effect_name": "Lush",
+  "comment": "Release ctx[3]-backed Airwindows StereoChorus port.",
+  "audio_func_name": "Fx_DLY_Lush",
+  "gid": 8,
+  "gid_comment": "0x08 = Delay -> Fx_DLY_; consolidated under DLY.",
+  "fxid": 404,
+  "fxid_comment": "0x0194 in the custom Airwindows range.",
+  "fxid_version": "1.00",
+  "flags_byte": 1,
+  "fixed_stage": 5,
+  "params": [
+    {
+      "name": "Speed",
+      "type": "knob",
+      "max": 100,
+      "default": 0,
+      "scale": "source_pow10",
+      "audio_min": 1.15292e-05,
+      "audio_max": 0.000745,
+      "audio_default": 0.0,
+      "source_default": 0.0,
+      "source_formula": "pow(0.32 + (A / 6.0), 10.0)",
+      "comment": "Airwindows A. Chorus sweep speed."
+    },
+    {
+      "name": "Depth",
+      "type": "knob",
+      "max": 100,
+      "default": 0,
+      "scale": "source_depth_over_speed",
+      "audio_min": 0.0,
+      "audio_max": 1445.877,
+      "audio_default": 0.0,
+      "source_default": 0.0,
+      "source_formula": "(B / 60.0) / speed",
+      "comment": "Airwindows B. Chorus delay depth; default 0 is dry."
+    }
+  ],
+  "audio_nop": false
+}
