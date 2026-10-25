@@ -11,6 +11,10 @@ ROOT = HERE.parents[2]
 OUT = ROOT / "build" / "sidecmp-validation"
 OUT.mkdir(parents=True, exist_ok=True)
 
+manifest = json.loads((HERE / "manifest.json").read_text())
+assert manifest["materialize_init"] is False
+assert len(manifest["params"]) == 9
+
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
 (OUT / "host.c").write_text(
     '#include "' + str(HERE / "sidecmp.c") + '"\n'
@@ -22,8 +26,7 @@ subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=Tru
     "int sidecmp_output_label(unsigned value, char *out) { return output_label(value, out); }\n"
     "unsigned sidecmp_model_from_knob(float value) { return model_from_knob(value); }\n"
     "unsigned sidecmp_output_from_knob(float value) { return output_mode_from_knob(value); }\n"
-    "float sidecmp_graph_low(void) { return graph_axis_level(DB_MIN); }\n"
-    "float sidecmp_graph_high(void) { return graph_axis_level(DB_MAX); }\n"
+    "int sidecmp_gr_meter_x(float reduction) { return gr_meter_x(reduction); }\n"
     "void sidecmp_render(uintptr_t *ctx, const float *input, float *output, unsigned n) {\n"
     "  float block[16]; unsigned j, i; ctx[5] = (uintptr_t)block;\n"
     "  for (j=0; j<n; j+=8u) {\n"
@@ -57,8 +60,8 @@ lib.sidecmp_model_from_knob.argtypes = [C.c_float]
 lib.sidecmp_model_from_knob.restype = C.c_uint
 lib.sidecmp_output_from_knob.argtypes = [C.c_float]
 lib.sidecmp_output_from_knob.restype = C.c_uint
-lib.sidecmp_graph_low.restype = C.c_float
-lib.sidecmp_graph_high.restype = C.c_float
+lib.sidecmp_gr_meter_x.argtypes = [C.c_float]
+lib.sidecmp_gr_meter_x.restype = C.c_int
 PTR = C.POINTER(C.c_float)
 lib.sidecmp_render.argtypes = [C.POINTER(C.c_size_t), PTR, PTR, C.c_uint]
 
@@ -195,11 +198,48 @@ assert recovered > ducked * 4.0, (ducked, recovered)
 assert lib.sidecmp_gr_meter(pump.ctx) > 0.0
 checks.append("24 dB makeup supports strong kick-triggered pumping and GR metering")
 
+for model in range(5):
+    hard_duck = Instance()
+    hard_duck.params[5] = 0.0
+    hard_duck.params[6] = 1.0
+    hard_duck.params[7] = 0.0
+    hard_duck.params[10] = 0.01
+    hard_duck.params[13] = model * 0.01
+    hard_duck_out = hard_duck.run(stereo(program, key_loud))
+    assert max(abs(hard_duck_out[2 * i])
+               for i in range(frames - 1024, frames)) == 0.0, model
+checks.append("maximum Ratio reaches exact silence for all five models above twice Threshold")
+
+near_max = Instance()
+near_max.params[5] = 0.0
+near_max.params[6] = 0.99
+near_max.params[7] = 0.0
+near_max.params[10] = 0.01
+near_max.params[13] = 0.01
+near_max_out = near_max.run(stereo(program, key_loud))
+assert max(abs(near_max_out[2 * i])
+           for i in range(frames - 1024, frames)) > 0.0
+checks.append("hard duck is reserved for the maximum Ratio position")
+
+for mode, expected_left, expected_right in (
+        (0.0, 0.8, 0.8), (0.01, 0.0, 0.8), (0.02, 0.0, 0.0)):
+    routed = Instance()
+    routed.params[5] = 0.0
+    routed.params[6] = 1.0
+    routed.params[7] = 0.0
+    routed.params[10] = mode
+    routed.params[13] = 0.01
+    routed_out = routed.run(stereo(program, key_loud))
+    tail = range(frames - 1024, frames)
+    assert max(abs(routed_out[2 * i] - expected_left) for i in tail) < 1e-6
+    assert max(abs(routed_out[2 * i + 1] - expected_right) for i in tail) < 1e-6
+checks.append("hard duck preserves Sum, Parallel, and Comp L output routing")
+
 model_levels = []
 for model in range(5):
     instance = Instance()
     instance.params[5] = 0.58
-    instance.params[6] = 1.0
+    instance.params[6] = 0.60
     instance.params[7] = 0.0
     instance.params[10] = 0.01
     instance.params[13] = model * 0.01
@@ -223,10 +263,11 @@ assert [lib.sidecmp_output_from_knob(value * 0.01) for value in range(3)] == lis
 assert [lib.sidecmp_model_from_knob(value * 0.01) for value in range(5)] == list(range(5))
 checks.append("both pedal selectors have one labeled detent per choice")
 
-assert 0.0 < lib.sidecmp_graph_low() < lib.sidecmp_graph_high() < 4.0
-checks.append("graph dB axis maps the full display range to useful signal levels")
+assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [112, 64, 16]
+assert lib.sidecmp_gr_meter_x(48.0) == 16
+checks.append("GR meter starts at the right edge, moves left with reduction, and saturates")
 assert lib.sidecmp_picture() == 1
-checks.append("visible-card callbacks publish a dynamic graph frame")
+checks.append("visible-card callbacks publish a dynamic GR meter frame")
 
 print(json.dumps({"state_bytes": lib.sidecmp_state_bytes(),
                   "model_levels": model_levels, "checks": checks}, indent=2))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build SideCmp: sidechain compression with a live transfer-curve display."""
+"""Build SideCmp: sidechain compression with a live gain-reduction meter."""
 import sys
 from pathlib import Path
 
@@ -8,24 +8,19 @@ ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "build"))
 from screen_image import Canvas, encode_zoom_rle  # noqa: E402
 
-LEFT, RIGHT, TOP, BOTTOM = 16, 112, 12, 55
+LEFT, RIGHT, TOP, BOTTOM = 16, 112, 18, 42
 
 
 def background(title=False):
     c = Canvas()
     c.rect(LEFT, TOP, RIGHT, BOTTOM)
-    for x in (40, 64, 88):
-        c.vline(x, TOP + 1, BOTTOM - 1)
-    for y in (22, 32, 42):
-        c.hline(LEFT + 1, RIGHT - 1, y)
-    c.draw_text("IN", LEFT - 9, BOTTOM - 4)
-    c.draw_text("OUT", LEFT + 2, TOP - 8)
-    c.draw_text("GR", 1, 57)
+    for x in (16, 40, 64, 88, 112):
+        c.vline(x, 23, 38)
+    c.draw_text("24", LEFT, 44)
+    c.draw_text("GR", 56, 44)
+    c.draw_text("0", RIGHT - 4, 44)
     if title:
         c.draw_text("SIDE CHICK", 64 - 40, 2, scale=2)
-        for x in range(LEFT, RIGHT):
-            y = BOTTOM - round((x - LEFT) * 0.42)
-            c.px(x, y)
     return c
 
 
