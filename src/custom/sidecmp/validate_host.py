@@ -11,22 +11,26 @@ ROOT = HERE.parents[2]
 OUT = ROOT / "build" / "sidecmp-validation"
 OUT.mkdir(parents=True, exist_ok=True)
 
+manifest = json.loads((HERE / "manifest.json").read_text())
+assert manifest["materialize_init"] is False
+assert len(manifest["params"]) == 9
+
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
 (OUT / "host.c").write_text(
     '#include "' + str(HERE / "sidecmp.c") + '"\n'
     "unsigned int _Fx_DLY_SideCmp_Info[16] = {[3]=128u,[4]=64u};\n"
     "unsigned sidecmp_state_bytes(void) { return sizeof(SideCmpState); }\n"
     "unsigned sidecmp_picture(void) { return _Fx_DLY_SideCmp_Info[5] != 0u; }\n"
+    "int sidecmp_frame_pixel(uintptr_t *ctx, unsigned x, unsigned y) {\n"
+    "  uintptr_t *d=(uintptr_t *)ctx[3]; SideCmpState *s=(SideCmpState *)d[0];\n"
+    "  return !!(s->z.frame[(y >> 3u) * ZV_W + x] & (1u << (y & 7u)));\n"
+    "}\n"
     "float sidecmp_gr_meter(uintptr_t *ctx) { uintptr_t *d=(uintptr_t *)ctx[3]; return ((SideCmpState *)d[0])->gr_meter; }\n"
     "int sidecmp_model_label(unsigned value, char *out) { return model_label(value, out); }\n"
     "int sidecmp_output_label(unsigned value, char *out) { return output_label(value, out); }\n"
     "unsigned sidecmp_model_from_knob(float value) { return model_from_knob(value); }\n"
     "unsigned sidecmp_output_from_knob(float value) { return output_mode_from_knob(value); }\n"
-    "float sidecmp_graph_low(void) { return graph_axis_level(DB_MIN); }\n"
-    "float sidecmp_graph_high(void) { return graph_axis_level(DB_MAX); }\n"
-    "int sidecmp_hard_duck_curve(float level, float threshold) {\n"
-    "  return curve_y_model(level, 1u, threshold, 100.0f, 1u, 1.0f);\n"
-    "}\n"
+    "int sidecmp_gr_meter_x(float reduction) { return gr_meter_x(reduction); }\n"
     "void sidecmp_render(uintptr_t *ctx, const float *input, float *output, unsigned n) {\n"
     "  float block[16]; unsigned j, i; ctx[5] = (uintptr_t)block;\n"
     "  for (j=0; j<n; j+=8u) {\n"
@@ -50,6 +54,8 @@ subprocess.run(
 lib = C.CDLL(str(OUT / "host.so"))
 lib.sidecmp_state_bytes.restype = C.c_uint
 lib.sidecmp_picture.restype = C.c_uint
+lib.sidecmp_frame_pixel.argtypes = [C.POINTER(C.c_size_t), C.c_uint, C.c_uint]
+lib.sidecmp_frame_pixel.restype = C.c_int
 lib.sidecmp_gr_meter.argtypes = [C.POINTER(C.c_size_t)]
 lib.sidecmp_gr_meter.restype = C.c_float
 lib.sidecmp_model_label.argtypes = [C.c_uint, C.c_char_p]
@@ -60,10 +66,8 @@ lib.sidecmp_model_from_knob.argtypes = [C.c_float]
 lib.sidecmp_model_from_knob.restype = C.c_uint
 lib.sidecmp_output_from_knob.argtypes = [C.c_float]
 lib.sidecmp_output_from_knob.restype = C.c_uint
-lib.sidecmp_graph_low.restype = C.c_float
-lib.sidecmp_graph_high.restype = C.c_float
-lib.sidecmp_hard_duck_curve.argtypes = [C.c_float, C.c_float]
-lib.sidecmp_hard_duck_curve.restype = C.c_int
+lib.sidecmp_gr_meter_x.argtypes = [C.c_float]
+lib.sidecmp_gr_meter_x.restype = C.c_int
 PTR = C.POINTER(C.c_float)
 lib.sidecmp_render.argtypes = [C.POINTER(C.c_size_t), PTR, PTR, C.c_uint]
 
@@ -200,16 +204,42 @@ assert recovered > ducked * 4.0, (ducked, recovered)
 assert lib.sidecmp_gr_meter(pump.ctx) > 0.0
 checks.append("24 dB makeup supports strong kick-triggered pumping and GR metering")
 
-hard_duck = Instance()
-hard_duck.params[5] = 0.0
-hard_duck.params[6] = 1.0
-hard_duck.params[7] = 0.0
-hard_duck.params[10] = 0.01
-hard_duck.params[13] = 0.01
-hard_duck_out = hard_duck.run(stereo(program, key_loud))
-assert max(abs(hard_duck_out[2 * i])
-           for i in range(frames - 1024, frames)) == 0.0
-checks.append("maximum Ratio reaches exact silence when the key exceeds twice Threshold")
+for model in range(5):
+    hard_duck = Instance()
+    hard_duck.params[5] = 0.0
+    hard_duck.params[6] = 1.0
+    hard_duck.params[7] = 0.0
+    hard_duck.params[10] = 0.01
+    hard_duck.params[13] = model * 0.01
+    hard_duck_out = hard_duck.run(stereo(program, key_loud))
+    assert max(abs(hard_duck_out[2 * i])
+               for i in range(frames - 1024, frames)) == 0.0, model
+checks.append("maximum Ratio reaches exact silence for all five models above twice Threshold")
+
+near_max = Instance()
+near_max.params[5] = 0.0
+near_max.params[6] = 0.99
+near_max.params[7] = 0.0
+near_max.params[10] = 0.01
+near_max.params[13] = 0.01
+near_max_out = near_max.run(stereo(program, key_loud))
+assert max(abs(near_max_out[2 * i])
+           for i in range(frames - 1024, frames)) > 0.0
+checks.append("hard duck is reserved for the maximum Ratio position")
+
+for mode, expected_left, expected_right in (
+        (0.0, 0.8, 0.8), (0.01, 0.0, 0.8), (0.02, 0.0, 0.0)):
+    routed = Instance()
+    routed.params[5] = 0.0
+    routed.params[6] = 1.0
+    routed.params[7] = 0.0
+    routed.params[10] = mode
+    routed.params[13] = 0.01
+    routed_out = routed.run(stereo(program, key_loud))
+    tail = range(frames - 1024, frames)
+    assert max(abs(routed_out[2 * i] - expected_left) for i in tail) < 1e-6
+    assert max(abs(routed_out[2 * i + 1] - expected_right) for i in tail) < 1e-6
+checks.append("hard duck preserves Sum, Parallel, and Comp L output routing")
 
 model_levels = []
 for model in range(5):
@@ -239,13 +269,24 @@ assert [lib.sidecmp_output_from_knob(value * 0.01) for value in range(3)] == lis
 assert [lib.sidecmp_model_from_knob(value * 0.01) for value in range(5)] == list(range(5))
 checks.append("both pedal selectors have one labeled detent per choice")
 
-assert 0.0 < lib.sidecmp_graph_low() < lib.sidecmp_graph_high() < 4.0
-checks.append("graph dB axis maps the full display range to useful signal levels")
-assert lib.sidecmp_hard_duck_curve(0.003, 0.001) == 55
-assert lib.sidecmp_hard_duck_curve(0.0011, 0.001) < 55
-checks.append("hard-duck graph reaches its silence floor above twice Threshold")
+assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [112, 64, 16]
+assert lib.sidecmp_gr_meter_x(48.0) == 16
+checks.append("GR meter starts at the right edge, moves left with reduction, and saturates")
 assert lib.sidecmp_picture() == 1
-checks.append("visible-card callbacks publish a dynamic graph frame")
+idle_meter = Instance()
+idle_meter.run(stereo(program, key_silent))
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 17, 28) == 0
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 111, 28) == 0
+assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
+hard_meter = Instance()
+hard_meter.params[5] = 0.58
+hard_meter.params[6] = 1.0
+hard_meter.params[7] = 0.0
+hard_meter.run(stereo(program, key_loud))
+assert lib.sidecmp_gr_meter(hard_meter.ctx) > 23.0
+assert lib.sidecmp_frame_pixel(hard_meter.ctx, 17, 28) == 1
+assert lib.sidecmp_frame_pixel(hard_meter.ctx, 111, 28) == 1
+checks.append("live meter frame renders empty at 0 dB and fills toward 24 dB under hard reduction")
 
 print(json.dumps({"state_bytes": lib.sidecmp_state_bytes(),
                   "model_levels": model_levels, "checks": checks}, indent=2))

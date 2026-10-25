@@ -1,7 +1,7 @@
 {
   "effect_name": "SideCmp",
   "display_name": "Side Chick",
-  "comment": "Sidechain compressor: compresses L using R as its detector. Output modes are Sum (weighted compressed L + R to both outputs), Parallel (separate weighted compressed L and R), and Comp L (weighted compressed L to both outputs). Includes five compressor-inspired responses and a live transfer graph with gain-reduction meter. Intended for MS-70CDR 2.10 at 44.1 kHz.",
+  "comment": "Sidechain compressor: compresses L using R as its detector. Output modes are Sum (weighted compressed L + R to both outputs), Parallel (separate weighted compressed L and R), and Comp L (weighted compressed L to both outputs). Includes five compressor-inspired responses and a live gain-reduction meter. Intended for MS-70CDR 2.10 at 44.1 kHz.",
   "audio_func_name": "Fx_DLY_SideCmp",
   "gid": 1,
   "fxid": 469,

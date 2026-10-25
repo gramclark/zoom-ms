@@ -1,6 +1,5 @@
 /* SideCmp: compress the left input using the right input as the sidechain.
- * When the effect card is visible, the screen shows the transfer curve and a
- * live point for the current sidechain envelope. */
+ * The visible effect card shows a live gain-reduction meter. */
 #include <stdint.h>
 #include "zvis.h"
 #include "sidecmp_art.h"
@@ -9,22 +8,14 @@ extern unsigned int _Fx_DLY_SideCmp_Info[];
 
 #define MAGIC 0x53434D33u
 #define FXID  469u
-#define LEFT  16
 #define RIGHT 112
-#define TOP   12
-#define BOT   55
 #define SR    44100.0f
-#define DB_MIN (-72.0f)
-#define DB_MAX 6.0f
 
 typedef struct {
-    unsigned magic, draw_step, active_model;
-    unsigned draw_model;
+    unsigned magic, active_model;
     float optical_fast, optical_slow, fet_env, varimu_env, vca_env, neve_env;
     float vca_gain, neve_gain, gr_meter;
-    float draw_threshold, draw_ratio_inv, draw_makeup;
-    float draw_level, draw_gr;
-    unsigned draw_hard_duck;
+    float draw_gr;
     ZvState z;
 } SideCmpState;
 
@@ -69,36 +60,6 @@ ZV_INLINE(level_db)
 static inline float level_db(float level)
 {
     return 6.02059991f * log2_pos(level);
-}
-
-ZV_INLINE(db_x)
-static inline int db_x(float db)
-{
-    float n = (db - DB_MIN) * (1.0f / (DB_MAX - DB_MIN));
-    return LEFT + (int)(clamp01(n) * 96.0f + 0.5f);
-}
-
-ZV_INLINE(db_y)
-static inline int db_y(float db)
-{
-    float n = (db - DB_MIN) * (1.0f / (DB_MAX - DB_MIN));
-    return BOT - (int)(clamp01(n) * (float)(BOT - TOP) + 0.5f);
-}
-
-ZV_INLINE(compressed_db)
-static inline float compressed_db(float input_db, float threshold, float ratio_inv,
-                                  float knee, float makeup)
-{
-    float delta = input_db - threshold;
-    float half = knee * 0.5f;
-    if (delta <= -half) return input_db + makeup;
-    if (delta >= half) return threshold + delta * ratio_inv + makeup;
-    {
-        float x = delta + half;
-        float curve = delta + (ratio_inv - 1.0f) * x * x *
-                      (0.5f * recip_approx_pos(knee));
-        return threshold + curve + makeup;
-    }
 }
 
 ZV_INLINE(time_coeff)
@@ -172,13 +133,6 @@ static inline float knee_for_model(unsigned model)
     return 0.18f;
 }
 
-ZV_INLINE(display_ratio)
-static inline float display_ratio(unsigned model, float ratio, float level, float threshold)
-{
-    float effective = model_ratio(model, ratio, level, threshold);
-    return effective > 1.0f ? effective : 1.0f;
-}
-
 ZV_INLINE(sanitize_level)
 static inline float sanitize_level(float x)
 {
@@ -186,13 +140,6 @@ static inline float sanitize_level(float x)
     if (!(level >= 0.0f)) return 0.0f;
     if (level > 4.0f) return 4.0f;
     return level;
-}
-
-ZV_INLINE(graph_axis_db)
-static inline float graph_axis_db(unsigned x)
-{
-    return DB_MIN + (float)(x - LEFT) *
-           ((DB_MAX - DB_MIN) * (1.0f / 96.0f));
 }
 
 ZV_INLINE(graph_axis_level)
@@ -218,78 +165,20 @@ static inline float graph_axis_level(float db)
     }
 }
 
-#pragma FUNC_CANNOT_INLINE(curve_y_model)
-#pragma CODE_SECTION(curve_y_model, ".audio")
-static int curve_y_model(float level, unsigned model, float threshold,
-                         float ratio, unsigned hard_duck, float makeup)
+ZV_INLINE(gr_meter_x)
+static inline int gr_meter_x(float reduction)
 {
-    float effective = display_ratio(model, ratio, level, threshold);
-    float threshold_db = level_db(threshold);
-    float knee_width = knee_for_model(model) * 24.0f;
-    float in_db = level_db(level);
-    float out_db = compressed_db(in_db, threshold_db,
-                                 recip_approx_pos(effective), knee_width,
-                                 level_db(makeup));
-    if (hard_duck && level > threshold) {
-        if (level >= 2.0f * threshold) out_db = DB_MIN;
-        else out_db += level_db(2.0f - level * recip_approx_pos(threshold));
-    }
-    return db_y(out_db);
+    float scaled = clamp01(reduction * (1.0f / 24.0f));
+    return RIGHT - (int)(scaled * 96.0f + 0.5f);
 }
 
-ZV_INLINE(draw_egg)
-static inline void draw_egg(ZvState *z, int x, int y)
+ZV_INLINE(draw_gr_meter)
+static inline void draw_gr_meter(SideCmpState *st)
 {
-    zv_px(z, x, y - 4, 1);
-    zv_fill(z, x - 1, y - 3, x + 1, y - 3, 1);
-    zv_fill(z, x - 2, y - 2, x + 2, y - 2, 1);
-    zv_fill(z, x - 2, y - 1, x + 2, y - 1, 1);
-    zv_fill(z, x - 3, y, x + 3, y, 1);
-    zv_fill(z, x - 3, y + 1, x + 3, y + 1, 1);
-    zv_fill(z, x - 2, y + 2, x + 2, y + 2, 1);
-    zv_fill(z, x - 1, y + 3, x + 1, y + 3, 1);
-    zv_px(z, x, y + 4, 1);
-}
-
-ZV_INLINE(draw_curve_part)
-static inline void draw_curve_part(SideCmpState *st, unsigned step)
-{
-    unsigned first = LEFT + (step - 1u) * 32u;
-    unsigned end = first + 32u;
-    unsigned x;
-    unsigned hard_duck = st->draw_hard_duck;
-    float ratio = recip_approx_pos(st->draw_ratio_inv);
-    int prev_y = curve_y_model(graph_axis_level(graph_axis_db(first)),
-                               st->draw_model, st->draw_threshold,
-                               ratio, hard_duck, st->draw_makeup);
-    for (x = first + 1u; x <= end; ++x) {
-        float input = graph_axis_level(graph_axis_db(x));
-        int y = curve_y_model(input, st->draw_model, st->draw_threshold,
-                              ratio, hard_duck, st->draw_makeup);
-        zv_line(&st->z, (int)x - 1, prev_y, (int)x, y, 1);
-        prev_y = y;
-    }
-    if (step >= 3u) {
-        int mx = db_x(level_db(st->draw_level));
-        int my = curve_y_model(st->draw_level, st->draw_model,
-                               st->draw_threshold, ratio,
-                               hard_duck, st->draw_makeup);
-        draw_egg(&st->z, mx, my);
-        zv_line(&st->z, 16, 61, 112, 61, 1);
-        zv_line(&st->z, 16, 58, 16, 63, 1);
-        zv_line(&st->z, 112, 58, 112, 63, 1);
-        zv_line(&st->z, 48, 59, 48, 63, 1);
-        zv_line(&st->z, 80, 59, 80, 63, 1);
-        {
-            unsigned width = (unsigned)(int)(clamp01(st->draw_gr * (1.0f / 24.0f)) *
-                                             94.0f + 0.5f);
-            if (width) zv_fill(&st->z, 17, 59, 16 + (int)width, 63, 1);
-        }
-        zv_submit(&st->z);
-        st->draw_step = 0;
-    } else {
-        st->draw_step = step + 1u;
-    }
+    int x = gr_meter_x(st->draw_gr);
+    zv_copy(&st->z, SIDECMP_BG);
+    zv_fill(&st->z, x, 28, RIGHT, 36, 1);
+    zv_submit(&st->z);
 }
 
 ZV_INLINE(model_from_knob)
@@ -347,9 +236,11 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     unsigned int *info = _Fx_DLY_SideCmp_Info;
     uintptr_t base, end;
     SideCmpState *st;
-    float threshold, ratio, ratio_inv, ratio_norm, attack_norm, release_norm;
+    float threshold, ratio, ratio_norm, attack_norm, release_norm;
     float attack, release, makeup, left_level, right_level;
     float gr_attack, gr_release;
+    float optical_fast_attack, optical_slow_attack;
+    float optical_fast_release, optical_slow_release;
     unsigned model, output_mode, hard_duck;
     unsigned i;
     int visible;
@@ -364,8 +255,6 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     st = (SideCmpState *)base;
     if (st->magic != MAGIC) {
         st->magic = MAGIC;
-        st->draw_step = 0;
-        st->draw_model = 0u;
         st->active_model = 5u;
         st->optical_fast = st->optical_slow = 0.0f;
         st->fet_env = st->varimu_env = st->vca_env = st->neve_env = 0.0f;
@@ -379,7 +268,6 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     zv_hide_knob_boxes(&st->z, info);
 
     if (params[0] < 0.5f) {
-        st->draw_step = 0;
         return;
     }
 
@@ -391,7 +279,6 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     ratio_norm = zoom_param_norm01(params[6], 0.35f);
     ratio = 1.0f + 99.0f * ratio_norm * ratio_norm;
     hard_duck = ratio_norm >= 0.995f;
-    ratio_inv = recip_approx_pos(ratio);
     attack_norm = zoom_param_norm01(params[7], 0.20f);
     release_norm = zoom_param_norm01(params[8], 0.45f);
     {
@@ -429,6 +316,12 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
         attack = time_coeff(0.0001f + attack_norm * attack_norm * 0.03f);
         release = time_coeff(0.01f + release_norm * release_norm * 0.99f);
     }
+    if (model == 0u) {
+        optical_fast_attack = time_coeff(0.012f + attack_norm * 0.04f);
+        optical_slow_attack = time_coeff(0.035f + attack_norm * 0.08f);
+        optical_fast_release = time_coeff(0.06f);
+        optical_slow_release = time_coeff(0.55f + release_norm * 1.2f);
+    }
     gr_attack = time_coeff(0.015f);
     gr_release = time_coeff(0.18f);
 
@@ -437,13 +330,10 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
         float key_level = sanitize_level(key), detector, effective_ratio;
         float knee, gain, wet, processed, output, reduction;
         if (model == 0u) {
-            float fast_attack = time_coeff(0.012f + attack_norm * 0.04f);
-            float slow_attack = time_coeff(0.035f + attack_norm * 0.08f);
             st->optical_fast = follow(st->optical_fast, key_level,
-                                      fast_attack, time_coeff(0.06f));
+                                      optical_fast_attack, optical_fast_release);
             st->optical_slow = follow(st->optical_slow, st->optical_fast,
-                                      slow_attack,
-                                      time_coeff(0.55f + release_norm * 1.2f));
+                                      optical_slow_attack, optical_slow_release);
             detector = 0.65f * st->optical_fast + 0.35f * st->optical_slow;
         } else if (model == 1u) {
             st->fet_env = follow(st->fet_env, key_level, attack, release);
@@ -496,29 +386,12 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     }
 
     if (!visible) {
-        st->draw_step = 0;
-        return;
-    }
-    if (st->draw_step) {
-        if (st->z.phase == ZV_IDLE) draw_curve_part(st, st->draw_step);
         return;
     }
     if (st->z.phase != ZV_IDLE || st->z.since < ZV_GAP) return;
 
-    st->draw_threshold = threshold;
-    st->draw_ratio_inv = ratio_inv;
-    st->draw_hard_duck = hard_duck;
-    st->draw_makeup = makeup;
-    st->draw_model = model;
     st->draw_gr = st->gr_meter;
-    st->draw_level = model == 0u ?
-        0.65f * st->optical_fast + 0.35f * st->optical_slow :
-        model == 1u ? st->fet_env :
-        model == 2u ? st->varimu_env :
-        model == 4u ? st->neve_env : st->vca_env;
-    zv_copy(&st->z, SIDECMP_BG);
-    st->draw_step = 1u;
-    draw_curve_part(st, st->draw_step);
+    draw_gr_meter(st);
 }
 
 int ZDL_GetLabel_5(unsigned int value, char *out)
