@@ -21,6 +21,10 @@ subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=Tru
     "unsigned int _Fx_DLY_SideCmp_Info[16] = {[3]=128u,[4]=64u};\n"
     "unsigned sidecmp_state_bytes(void) { return sizeof(SideCmpState); }\n"
     "unsigned sidecmp_picture(void) { return _Fx_DLY_SideCmp_Info[5] != 0u; }\n"
+    "int sidecmp_frame_pixel(uintptr_t *ctx, unsigned x, unsigned y) {\n"
+    "  uintptr_t *d=(uintptr_t *)ctx[3]; SideCmpState *s=(SideCmpState *)d[0];\n"
+    "  return !!(s->z.frame[(y >> 3u) * ZV_W + x] & (1u << (y & 7u)));\n"
+    "}\n"
     "float sidecmp_gr_meter(uintptr_t *ctx) { uintptr_t *d=(uintptr_t *)ctx[3]; return ((SideCmpState *)d[0])->gr_meter; }\n"
     "int sidecmp_model_label(unsigned value, char *out) { return model_label(value, out); }\n"
     "int sidecmp_output_label(unsigned value, char *out) { return output_label(value, out); }\n"
@@ -50,6 +54,8 @@ subprocess.run(
 lib = C.CDLL(str(OUT / "host.so"))
 lib.sidecmp_state_bytes.restype = C.c_uint
 lib.sidecmp_picture.restype = C.c_uint
+lib.sidecmp_frame_pixel.argtypes = [C.POINTER(C.c_size_t), C.c_uint, C.c_uint]
+lib.sidecmp_frame_pixel.restype = C.c_int
 lib.sidecmp_gr_meter.argtypes = [C.POINTER(C.c_size_t)]
 lib.sidecmp_gr_meter.restype = C.c_float
 lib.sidecmp_model_label.argtypes = [C.c_uint, C.c_char_p]
@@ -267,7 +273,20 @@ assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [112, 64, 16]
 assert lib.sidecmp_gr_meter_x(48.0) == 16
 checks.append("GR meter starts at the right edge, moves left with reduction, and saturates")
 assert lib.sidecmp_picture() == 1
-checks.append("visible-card callbacks publish a dynamic GR meter frame")
+idle_meter = Instance()
+idle_meter.run(stereo(program, key_silent))
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 17, 28) == 0
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 111, 28) == 0
+assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
+hard_meter = Instance()
+hard_meter.params[5] = 0.58
+hard_meter.params[6] = 1.0
+hard_meter.params[7] = 0.0
+hard_meter.run(stereo(program, key_loud))
+assert lib.sidecmp_gr_meter(hard_meter.ctx) > 23.0
+assert lib.sidecmp_frame_pixel(hard_meter.ctx, 17, 28) == 1
+assert lib.sidecmp_frame_pixel(hard_meter.ctx, 111, 28) == 1
+checks.append("live meter frame renders empty at 0 dB and fills toward 24 dB under hard reduction")
 
 print(json.dumps({"state_bytes": lib.sidecmp_state_bytes(),
                   "model_levels": model_levels, "checks": checks}, indent=2))
