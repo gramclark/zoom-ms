@@ -17,10 +17,20 @@ def background(title=False):
     for x in (16, 40, 64, 88, 112):
         c.vline(x, 23, 38)
     c.draw_text("24", LEFT, 44)
-    c.draw_text("GR", 56, 44)
+    c.draw_text("18", 37, 44)
+    c.draw_text("12", 61, 44)
+    c.draw_text("6", 86, 44)
+    c.draw_text("GR", 56, 52)
     c.draw_text("0", RIGHT - 4, 44)
     if title:
         c.draw_text("SIDE CHICK", 64 - 40, 2, scale=2)
+    return c
+
+
+def cover():
+    c = background(title=True)
+    for y in range(28, 37):
+        c.hline(64, RIGHT - 1, y)
     return c
 
 
@@ -51,4 +61,4 @@ if "--art-only" in sys.argv:
 sys.path.insert(0, str(HERE.parent / "common"))
 from zvis_build import build  # noqa: E402
 
-build(HERE, encode_zoom_rle(background(title=True)))
+build(HERE, encode_zoom_rle(cover()))
