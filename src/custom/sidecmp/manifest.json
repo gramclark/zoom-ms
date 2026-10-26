@@ -1,7 +1,7 @@
 {
   "effect_name": "SideCmp",
   "display_name": "Pump It",
-  "comment": "Sidechain compressor: compresses L using R as its detector. Output modes are Sum (weighted compressed L + R to both outputs), Parallel (separate weighted compressed L and R), and Comp L (weighted compressed L to both outputs). Includes five compressor-inspired responses and a live 0-24 dB gain-reduction needle meter. Intended for MS-70CDR 2.10 at 44.1 kHz.",
+  "comment": "Sidechain compressor: compresses L using R as its detector. Output modes are Sum, Parallel, Comp L, and Div0 Sum (reads separated channels from the Dry buffer and sums to mono). Includes five compressor-inspired responses, a linked output safety limiter, and a live 0-24 dB gain-reduction needle meter. Intended for MS-70CDR 2.10 at 44.1 kHz.",
   "audio_func_name": "Fx_DLY_SideCmp",
   "gid": 1,
   "fxid": 469,
@@ -14,7 +14,7 @@
     {"name": "Atk", "type": "knob", "max": 100, "default": 20, "comment": "Compressor-model-dependent attack control."},
     {"name": "Rel", "type": "knob", "max": 100, "default": 45, "comment": "Compressor-model-dependent release control."},
     {"name": "Make", "type": "knob", "max": 100, "default": 0, "comment": "Post-compression makeup gain from 0 to approximately +24 dB for stronger pumping."},
-    {"name": "Mode", "type": "knob", "max": 2, "default": 0, "labels": ["Sum", "Par", "CmpL"], "comment": "Stepped output routing: Sum (weighted L + R to both), Parallel (separate L and R), or Comp L (compressed L to both)."},
+    {"name": "Mode", "type": "knob", "max": 3, "default": 0, "labels": ["Sum", "Par", "CmpL", "D0Sm"], "comment": "Output: Sum, Parallel, Comp L, or D0Sm (read Div0-separated L/R from the Dry buffer and sum to mono)."},
     {"name": "LLev", "type": "knob", "max": 100, "default": 50, "comment": "Output level for compressed L (and its contribution in Sum), 0 to 4x."},
     {"name": "RLev", "type": "knob", "max": 100, "default": 50, "comment": "Output level for the R sidechain (Sum and Parallel), 0 to 4x."},
     {"name": "Mod", "type": "knob", "max": 4, "default": 3, "labels": ["Opt", "FET", "VMu", "VCA", "Nev"], "comment": "Stepped compressor voicing selector."}

@@ -8,11 +8,12 @@ ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "build"))
 from screen_image import Canvas, encode_zoom_rle  # noqa: E402
 
+
 def meter_tip(reduction):
     scaled = min(1.0, max(0.0, reduction / 24.0))
-    x = 94 - int(60 * scaled + 0.5)
+    x = 102 - int(76 * scaled + 0.5)
     dx = x - 64
-    y = 57 - (31 * (900 - dx * dx) // 900)
+    y = 54 - (22 * (1444 - dx * dx) // 1444)
     return x, y
 
 
@@ -35,20 +36,21 @@ def line(canvas, x0, y0, x1, y1):
 
 def background(title=False):
     c = Canvas()
+    c.rect(14, 18, 114, 62)
     previous_y = None
-    for x in range(34, 95):
+    for x in range(26, 103):
         dx = x - 64
-        y = 57 - (31 * (900 - dx * dx) // 900)
+        y = 54 - (22 * (1444 - dx * dx) // 1444)
         if previous_y is None:
             c.px(x, y)
         else:
             c.vline(x, previous_y, y)
         previous_y = y
-    for x, y in ((34, 57), (49, 33), (64, 26), (79, 33), (94, 57)):
+    for x, y in ((26, 54), (45, 38), (64, 32), (83, 38), (102, 54)):
         c.vline(x, y, y + 4)
     for label, x, y in (
-        ("24", 17, 47), ("18", 39, 34), ("12", 61, 18),
-        ("6", 84, 34), ("0", 106, 47), ("GR", 61, 14),
+        ("24", 19, 46), ("18", 39, 31), ("12", 61, 24),
+        ("6", 84, 31), ("0", 106, 46), ("GR", 61, 19),
     ):
         c.draw_text(label, x, y)
     if title:
@@ -58,7 +60,7 @@ def background(title=False):
 
 def draw_needle(canvas, reduction):
     x, y = meter_tip(reduction)
-    line(canvas, 64, 59, x, y)
+    line(canvas, 64, 56, x, y)
 
 
 def cover():

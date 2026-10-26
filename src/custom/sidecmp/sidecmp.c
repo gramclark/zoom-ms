@@ -6,14 +6,15 @@
 
 extern unsigned int _Fx_DLY_SideCmp_Info[];
 
-#define MAGIC 0x53434D33u
+#define MAGIC 0x50495434u
 #define FXID  469u
 #define SR    44100.0f
+#define OUTPUT_CEILING 0.95f
 
 typedef struct {
     unsigned magic, active_model;
     float optical_fast, optical_slow, fet_env, varimu_env, vca_env, neve_env;
-    float vca_gain, neve_gain, gr_meter;
+    float vca_gain, neve_gain, gr_meter, limit_gain;
     float draw_gr;
     ZvState z;
 } SideCmpState;
@@ -168,14 +169,14 @@ ZV_INLINE(gr_meter_x)
 static inline int gr_meter_x(float reduction)
 {
     float scaled = clamp01(reduction * (1.0f / 24.0f));
-    return 94 - (int)(scaled * 60.0f + 0.5f);
+    return 102 - (int)(scaled * 76.0f + 0.5f);
 }
 
 ZV_INLINE(gr_meter_y)
 static inline int gr_meter_y(float reduction)
 {
     int dx = gr_meter_x(reduction) - 64;
-    return 57 - (31 * (900 - dx * dx) / 900);
+    return 54 - (22 * (1444 - dx * dx) / 1444);
 }
 
 ZV_INLINE(draw_gr_meter)
@@ -183,7 +184,7 @@ static inline void draw_gr_meter(SideCmpState *st)
 {
     int x = gr_meter_x(st->draw_gr), y = gr_meter_y(st->draw_gr);
     zv_copy(&st->z, SIDECMP_BG);
-    zv_line(&st->z, 64, 59, x, y, 1);
+    zv_line(&st->z, 64, 56, x, y, 1);
     zv_submit(&st->z);
 }
 
@@ -200,7 +201,7 @@ static inline unsigned output_mode_from_knob(float value)
 {
     unsigned mode = (unsigned)(int)(zoom_param_norm01(value, 0.0f) *
                                     100.0f + 0.5f);
-    return mode > 2u ? 2u : mode;
+    return mode > 3u ? 3u : mode;
 }
 
 ZV_INLINE(model_label)
@@ -225,7 +226,8 @@ static inline int output_label(unsigned value, char *out)
     unsigned i;
     if (value == 0u) label = "Sum";
     else if (value == 1u) label = "Par";
-    else label = "CompL";
+    else if (value == 2u) label = "CmpL";
+    else label = "D0Sm";
     for (i = 0u; i < 7u && label[i]; ++i) out[i] = label[i];
     out[i] = 0;
     return (int)i;
@@ -236,6 +238,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
 {
     float *params = (float *)ctx[1];
     float *fx = (float *)ctx[5];
+    float *dry = (float *)ctx[4];
     uintptr_t *desc = (uintptr_t *)ctx[3];
     unsigned int *magic_src = (unsigned int *)ctx[12];
     unsigned int *magic_dst = *(unsigned int **)ctx[11];
@@ -244,7 +247,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     SideCmpState *st;
     float threshold, ratio, ratio_norm, attack_norm, release_norm;
     float attack, release, makeup, left_level, right_level;
-    float gr_attack, gr_release;
+    float gr_attack, gr_release, limit_release;
     float optical_fast_attack, optical_slow_attack;
     float optical_fast_release, optical_slow_release;
     unsigned model, output_mode, hard_duck;
@@ -266,6 +269,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
         st->fet_env = st->varimu_env = st->vca_env = st->neve_env = 0.0f;
         st->vca_gain = st->neve_gain = 1.0f;
         st->gr_meter = 0.0f;
+        st->limit_gain = 1.0f;
         zv_init(&st->z, FXID, info);
     }
 
@@ -330,11 +334,14 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     }
     gr_attack = time_coeff(0.015f);
     gr_release = time_coeff(0.18f);
+    limit_release = time_coeff(0.05f);
 
     for (i = 0; i < 8u; ++i) {
-        float program = fx[i], key = fx[i + 8u];
+        float *input = output_mode == 3u && dry ? dry : fx;
+        float program = input[i], key = input[i + 8u];
         float key_level = sanitize_level(key), detector, effective_ratio;
-        float knee, gain, wet, processed, output, reduction;
+        float knee, gain, wet, processed, output_left, output_right, reduction;
+        float peak;
         if (model == 0u) {
             st->optical_fast = follow(st->optical_fast, key_level,
                                       optical_fast_attack, optical_fast_release);
@@ -378,17 +385,29 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
         st->gr_meter = follow(st->gr_meter, reduction, gr_attack, gr_release);
         wet = color_stage(program * gain * makeup, model, 1.0f - gain);
         processed = wet * left_level;
-        if (output_mode == 0u) {
-            output = processed + key * right_level;
-            fx[i] = output;
-            fx[i + 8u] = output;
+        if (output_mode == 0u || output_mode == 3u) {
+            output_left = processed + key * right_level;
+            output_right = output_left;
         } else if (output_mode == 1u) {
-            fx[i] = processed;
-            fx[i + 8u] = key * right_level;
+            output_left = processed;
+            output_right = key * right_level;
         } else {
-            fx[i] = processed;
-            fx[i + 8u] = processed;
+            output_left = processed;
+            output_right = processed;
         }
+        peak = output_left < 0.0f ? -output_left : output_left;
+        {
+            float right_peak = output_right < 0.0f ? -output_right : output_right;
+            if (right_peak > peak) peak = right_peak;
+        }
+        if (peak > OUTPUT_CEILING) {
+            float required = OUTPUT_CEILING * recip_approx_pos(peak);
+            if (required < st->limit_gain) st->limit_gain = required;
+        } else {
+            st->limit_gain += limit_release * (1.0f - st->limit_gain);
+        }
+        fx[i] = output_left * st->limit_gain;
+        fx[i + 8u] = output_right * st->limit_gain;
     }
 
     if (!visible) {
