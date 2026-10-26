@@ -14,6 +14,8 @@ OUT.mkdir(parents=True, exist_ok=True)
 manifest = json.loads((HERE / "manifest.json").read_text())
 assert manifest["materialize_init"] is False
 assert len(manifest["params"]) == 9
+assert manifest["display_name"] == "Pump It"
+assert all(len(param["name"]) <= 4 for param in manifest["params"])
 
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
 (OUT / "host.c").write_text(
@@ -31,6 +33,7 @@ subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=Tru
     "unsigned sidecmp_model_from_knob(float value) { return model_from_knob(value); }\n"
     "unsigned sidecmp_output_from_knob(float value) { return output_mode_from_knob(value); }\n"
     "int sidecmp_gr_meter_x(float reduction) { return gr_meter_x(reduction); }\n"
+    "int sidecmp_gr_meter_y(float reduction) { return gr_meter_y(reduction); }\n"
     "void sidecmp_render(uintptr_t *ctx, const float *input, float *output, unsigned n) {\n"
     "  float block[16]; unsigned j, i; ctx[5] = (uintptr_t)block;\n"
     "  for (j=0; j<n; j+=8u) {\n"
@@ -68,6 +71,8 @@ lib.sidecmp_output_from_knob.argtypes = [C.c_float]
 lib.sidecmp_output_from_knob.restype = C.c_uint
 lib.sidecmp_gr_meter_x.argtypes = [C.c_float]
 lib.sidecmp_gr_meter_x.restype = C.c_int
+lib.sidecmp_gr_meter_y.argtypes = [C.c_float]
+lib.sidecmp_gr_meter_y.restype = C.c_int
 PTR = C.POINTER(C.c_float)
 lib.sidecmp_render.argtypes = [C.POINTER(C.c_size_t), PTR, PTR, C.c_uint]
 
@@ -258,25 +263,25 @@ for value in range(5):
     label_buffer = C.create_string_buffer(8)
     length = lib.sidecmp_model_label(value, label_buffer)
     labels.append(label_buffer.value[:length].decode("ascii"))
-assert labels == ["Optic", "FET", "V-Mu", "VCA", "Neve"], labels
+assert labels == ["Opt", "FET", "VMu", "VCA", "Nev"], labels
 output_labels = []
 for value in range(3):
     label_buffer = C.create_string_buffer(8)
     length = lib.sidecmp_output_label(value, label_buffer)
     output_labels.append(label_buffer.value[:length].decode("ascii"))
-assert output_labels == ["Sum", "Paral", "CompL"], output_labels
+assert output_labels == ["Sum", "Par", "CompL"], output_labels
 assert [lib.sidecmp_output_from_knob(value * 0.01) for value in range(3)] == list(range(3))
 assert [lib.sidecmp_model_from_knob(value * 0.01) for value in range(5)] == list(range(5))
 checks.append("both pedal selectors have one labeled detent per choice")
 
-assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [112, 64, 16]
-assert lib.sidecmp_gr_meter_x(48.0) == 16
-checks.append("GR meter starts at the right edge, moves left with reduction, and saturates")
+assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [94, 64, 34]
+assert [lib.sidecmp_gr_meter_y(x) for x in (0.0, 12.0, 24.0)] == [57, 26, 57]
+assert lib.sidecmp_gr_meter_x(48.0) == 34
+checks.append("needle sweeps right-to-left over the 0-24 dB curved scale")
 assert lib.sidecmp_picture() == 1
 idle_meter = Instance()
 idle_meter.run(stereo(program, key_silent))
-assert lib.sidecmp_frame_pixel(idle_meter.ctx, 17, 28) == 0
-assert lib.sidecmp_frame_pixel(idle_meter.ctx, 111, 28) == 0
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 94, 57) == 1
 assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
 hard_meter = Instance()
 hard_meter.params[5] = 0.58
@@ -284,9 +289,13 @@ hard_meter.params[6] = 1.0
 hard_meter.params[7] = 0.0
 hard_meter.run(stereo(program, key_loud))
 assert lib.sidecmp_gr_meter(hard_meter.ctx) > 23.0
-assert lib.sidecmp_frame_pixel(hard_meter.ctx, 17, 28) == 1
-assert lib.sidecmp_frame_pixel(hard_meter.ctx, 111, 28) == 1
-checks.append("live meter frame renders empty at 0 dB and fills toward 24 dB under hard reduction")
+changed_pixels = sum(
+    lib.sidecmp_frame_pixel(idle_meter.ctx, x, y) !=
+    lib.sidecmp_frame_pixel(hard_meter.ctx, x, y)
+    for y in range(26, 60) for x in range(34, 95)
+)
+assert changed_pixels > 20, changed_pixels
+checks.append("live needle rests at 0 dB and swings to 24 dB under hard reduction")
 
 print(json.dumps({"state_bytes": lib.sidecmp_state_bytes(),
                   "model_levels": model_levels, "checks": checks}, indent=2))

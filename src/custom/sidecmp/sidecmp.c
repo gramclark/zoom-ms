@@ -8,7 +8,6 @@ extern unsigned int _Fx_DLY_SideCmp_Info[];
 
 #define MAGIC 0x53434D33u
 #define FXID  469u
-#define RIGHT 112
 #define SR    44100.0f
 
 typedef struct {
@@ -169,15 +168,22 @@ ZV_INLINE(gr_meter_x)
 static inline int gr_meter_x(float reduction)
 {
     float scaled = clamp01(reduction * (1.0f / 24.0f));
-    return RIGHT - (int)(scaled * 96.0f + 0.5f);
+    return 94 - (int)(scaled * 60.0f + 0.5f);
+}
+
+ZV_INLINE(gr_meter_y)
+static inline int gr_meter_y(float reduction)
+{
+    int dx = gr_meter_x(reduction) - 64;
+    return 57 - (31 * (900 - dx * dx) / 900);
 }
 
 ZV_INLINE(draw_gr_meter)
 static inline void draw_gr_meter(SideCmpState *st)
 {
-    int x = gr_meter_x(st->draw_gr);
+    int x = gr_meter_x(st->draw_gr), y = gr_meter_y(st->draw_gr);
     zv_copy(&st->z, SIDECMP_BG);
-    zv_fill(&st->z, x, 28, RIGHT, 36, 1);
+    zv_line(&st->z, 64, 59, x, y, 1);
     zv_submit(&st->z);
 }
 
@@ -202,11 +208,11 @@ static inline int model_label(unsigned value, char *out)
 {
     const char *label;
     unsigned i, index = value > 4u ? 4u : value;
-    if (index == 0u) label = "Optic";
+    if (index == 0u) label = "Opt";
     else if (index == 1u) label = "FET";
-    else if (index == 2u) label = "V-Mu";
+    else if (index == 2u) label = "VMu";
     else if (index == 3u) label = "VCA";
-    else label = "Neve";
+    else label = "Nev";
     for (i = 0u; i < 5u && label[i]; ++i) out[i] = label[i];
     out[i] = 0;
     return (int)i;
@@ -218,7 +224,7 @@ static inline int output_label(unsigned value, char *out)
     const char *label;
     unsigned i;
     if (value == 0u) label = "Sum";
-    else if (value == 1u) label = "Paral";
+    else if (value == 1u) label = "Par";
     else label = "CompL";
     for (i = 0u; i < 7u && label[i]; ++i) out[i] = label[i];
     out[i] = 0;

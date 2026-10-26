@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build SideCmp: sidechain compression with a live gain-reduction meter."""
+"""Build SideCmp: sidechain compression with a live needle gain-reduction meter."""
 import sys
 from pathlib import Path
 
@@ -8,29 +8,62 @@ ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "build"))
 from screen_image import Canvas, encode_zoom_rle  # noqa: E402
 
-LEFT, RIGHT, TOP, BOTTOM = 16, 112, 18, 42
+def meter_tip(reduction):
+    scaled = min(1.0, max(0.0, reduction / 24.0))
+    x = 94 - int(60 * scaled + 0.5)
+    dx = x - 64
+    y = 57 - (31 * (900 - dx * dx) // 900)
+    return x, y
+
+
+def line(canvas, x0, y0, x1, y1):
+    dx, sx = abs(x1 - x0), 1 if x0 < x1 else -1
+    dy, sy = -abs(y1 - y0), 1 if y0 < y1 else -1
+    error = dx + dy
+    while True:
+        canvas.px(x0, y0)
+        if x0 == x1 and y0 == y1:
+            break
+        twice = 2 * error
+        if twice >= dy:
+            error += dy
+            x0 += sx
+        if twice <= dx:
+            error += dx
+            y0 += sy
 
 
 def background(title=False):
     c = Canvas()
-    c.rect(LEFT, TOP, RIGHT, BOTTOM)
-    for x in (16, 40, 64, 88, 112):
-        c.vline(x, 23, 38)
-    c.draw_text("24", LEFT, 44)
-    c.draw_text("18", 37, 44)
-    c.draw_text("12", 61, 44)
-    c.draw_text("6", 86, 44)
-    c.draw_text("GR", 56, 52)
-    c.draw_text("0", RIGHT - 4, 44)
+    previous_y = None
+    for x in range(34, 95):
+        dx = x - 64
+        y = 57 - (31 * (900 - dx * dx) // 900)
+        if previous_y is None:
+            c.px(x, y)
+        else:
+            c.vline(x, previous_y, y)
+        previous_y = y
+    for x, y in ((34, 57), (49, 33), (64, 26), (79, 33), (94, 57)):
+        c.vline(x, y, y + 4)
+    for label, x, y in (
+        ("24", 17, 47), ("18", 39, 34), ("12", 61, 18),
+        ("6", 84, 34), ("0", 106, 47), ("GR", 61, 14),
+    ):
+        c.draw_text(label, x, y)
     if title:
-        c.draw_text("SIDE CHICK", 64 - 40, 2, scale=2)
+        c.draw_text("PUMP IT", 40, 2, scale=2)
     return c
+
+
+def draw_needle(canvas, reduction):
+    x, y = meter_tip(reduction)
+    line(canvas, 64, 59, x, y)
 
 
 def cover():
     c = background(title=True)
-    for y in range(28, 37):
-        c.hline(64, RIGHT - 1, y)
+    draw_needle(c, 12.0)
     return c
 
 

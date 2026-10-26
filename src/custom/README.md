@@ -9,7 +9,7 @@ Current custom effects:
 | Effect | Notes |
 |---|---|
 | [ott/](ott/) | OTT-style 3-band upward/downward compressor with `DryWet`, `Time`, `Output`, and `SplitFrq`. Not an Ableton port. |
-| [sidecmp/](sidecmp/) — Side Chick | L/R sidechain compressor with Sum, Parallel, and compressed-L-both output modes, independent output levels, five compressor-inspired responses, up to 24 dB makeup, a maximum-Ratio hard mute at twice the sidechain threshold, and a live 0–24 dB gain-reduction meter. It is categorized under Dynamics. Build explicitly with `python3 build_all.py sidecmp`; experimental and requires MS-70CDR 2.10 for the animated screen. Its synthesized edit handlers beyond the first two knobs are not hardware-confirmed, so validate the added controls on the pedal before relying on them. |
+| [sidecmp/](sidecmp/) — Pump It | L/R sidechain compressor with Sum, Parallel, and compressed-L-both output modes, independent output levels, five compressor-inspired responses, up to 24 dB makeup, a maximum-Ratio hard mute at twice the sidechain threshold, and a live 0–24 dB gain-reduction needle meter. It is categorized under Dynamics. Build explicitly with `python3 build_all.py sidecmp`; experimental and requires MS-70CDR 2.10 for the animated screen. Its synthesized edit handlers beyond the first two knobs are not hardware-confirmed, so validate the added controls on the pedal before relying on them. |
 
 Before adding a new custom effect, read
 [../../docs/SAFE-DSP-RULES.md](../../docs/SAFE-DSP-RULES.md). Keep the first
