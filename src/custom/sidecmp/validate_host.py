@@ -13,10 +13,14 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 manifest = json.loads((HERE / "manifest.json").read_text())
 assert manifest["materialize_init"] is False
+selection_art = (HERE / "selection_art.bin").read_bytes()
+assert len(selection_art) == 1024 and any(selection_art)
+assert not any(selection_art[7 * 128:]), "bottom eight rows must remain clear for pedal knob icons"
 assert len(manifest["params"]) == 9
 assert manifest["display_name"] == "Pump It"
 assert all(len(param["name"]) <= 4 for param in manifest["params"])
 assert manifest["params"][5]["max"] == 3
+checks = ["selection art is 128x64, with a clear bottom margin for pedal knob icons"]
 
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
 (OUT / "host.c").write_text(
@@ -130,7 +134,6 @@ frames = 8192
 program = [0.4] * frames
 key_silent = [0.0] * frames
 key_loud = [0.8] * frames
-checks = []
 
 bypass = Instance()
 bypass.params[0] = 0
@@ -308,15 +311,16 @@ assert [lib.sidecmp_output_from_knob(value * 0.01) for value in range(4)] == lis
 assert [lib.sidecmp_model_from_knob(value * 0.01) for value in range(5)] == list(range(5))
 checks.append("both pedal selectors have one labeled detent per choice")
 
-assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [102, 64, 26]
-assert [lib.sidecmp_gr_meter_y(x) for x in (0.0, 12.0, 24.0)] == [54, 32, 54]
-assert lib.sidecmp_gr_meter_x(48.0) == 26
-checks.append("wide, shallow needle sweeps right-to-left over the 0-24 dB curved scale")
+assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [116, 64, 12]
+assert [lib.sidecmp_gr_meter_y(x) for x in (0.0, 12.0, 24.0)] == [53, 11, 53]
+assert lib.sidecmp_gr_meter_x(48.0) == 12
+checks.append("needle sweeps across the full-screen 0-24 dB gain-reduction meter")
 assert lib.sidecmp_picture() == 1
 idle_meter = Instance()
 idle_meter.run(stereo(program, key_silent))
-assert lib.sidecmp_frame_pixel(idle_meter.ctx, 14, 18) == 1
-assert lib.sidecmp_frame_pixel(idle_meter.ctx, 102, 54) == 1
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 1, 1) == 1
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 116, 53) == 1
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 64, 11) == 1
 assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
 hard_meter = Instance()
 hard_meter.params[5] = 0.58
@@ -327,7 +331,7 @@ assert lib.sidecmp_gr_meter(hard_meter.ctx) > 23.0
 changed_pixels = sum(
     lib.sidecmp_frame_pixel(idle_meter.ctx, x, y) !=
     lib.sidecmp_frame_pixel(hard_meter.ctx, x, y)
-    for y in range(30, 60) for x in range(26, 103)
+    for y in range(10, 58) for x in range(12, 117)
 )
 assert changed_pixels > 20, changed_pixels
 checks.append("live needle rests at 0 dB and swings to 24 dB under hard reduction")

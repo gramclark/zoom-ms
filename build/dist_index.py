@@ -56,7 +56,8 @@ def main(argv):
         print("dist/index.json is current")
         return 0
     target.write_text(text)
-    print(f"dist/index.json: {text.count('\"file\"')} effects")
+    effect_count = text.count('"file"')
+    print(f"dist/index.json: {effect_count} effects")
     return 0
 
 

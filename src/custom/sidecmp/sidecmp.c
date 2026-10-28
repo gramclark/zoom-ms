@@ -169,14 +169,14 @@ ZV_INLINE(gr_meter_x)
 static inline int gr_meter_x(float reduction)
 {
     float scaled = clamp01(reduction * (1.0f / 24.0f));
-    return 102 - (int)(scaled * 76.0f + 0.5f);
+    return 116 - (int)(scaled * 104.0f + 0.5f);
 }
 
 ZV_INLINE(gr_meter_y)
 static inline int gr_meter_y(float reduction)
 {
     int dx = gr_meter_x(reduction) - 64;
-    return 54 - (22 * (1444 - dx * dx) / 1444);
+    return 53 - (42 * (2704 - dx * dx) / 2704);
 }
 
 ZV_INLINE(draw_gr_meter)
@@ -184,7 +184,10 @@ static inline void draw_gr_meter(SideCmpState *st)
 {
     int x = gr_meter_x(st->draw_gr), y = gr_meter_y(st->draw_gr);
     zv_copy(&st->z, SIDECMP_BG);
-    zv_line(&st->z, 64, 56, x, y, 1);
+    zv_line(&st->z, 63, 55, x - 1, y, 1);
+    zv_line(&st->z, 65, 55, x + 1, y, 1);
+    zv_line(&st->z, 64, 55, x, y, 1);
+    zv_fill(&st->z, 63, 54, 65, 56, 1);
     zv_submit(&st->z);
 }
 

@@ -271,6 +271,15 @@
    "sha256": "5438e223c368910482728edd20a9e057d217a37db1411e20705f676123e849ff"
   },
   {
+   "file": "SideCmp.ZDL",
+   "name": "Pump It",
+   "gid": 1,
+   "fxid": 469,
+   "version": "0.01",
+   "bytes": 22658,
+   "sha256": "034e1cc8f59ca94af452b98dd6f5468dce1388cd546fa510b820a115c21b5f37"
+  },
+  {
    "file": "Skull.ZDL",
    "name": "Skull",
    "gid": 8,
