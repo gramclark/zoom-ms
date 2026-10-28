@@ -176,7 +176,7 @@ ZV_INLINE(gr_meter_y)
 static inline int gr_meter_y(float reduction)
 {
     int dx = gr_meter_x(reduction) - 64;
-    return 53 - (42 * (2704 - dx * dx) / 2704);
+    return 51 - (28 * (2704 - dx * dx) / 2704);
 }
 
 ZV_INLINE(draw_gr_meter)
@@ -184,10 +184,10 @@ static inline void draw_gr_meter(SideCmpState *st)
 {
     int x = gr_meter_x(st->draw_gr), y = gr_meter_y(st->draw_gr);
     zv_copy(&st->z, SIDECMP_BG);
-    zv_line(&st->z, 63, 55, x - 1, y, 1);
-    zv_line(&st->z, 65, 55, x + 1, y, 1);
-    zv_line(&st->z, 64, 55, x, y, 1);
-    zv_fill(&st->z, 63, 54, 65, 56, 1);
+    zv_line(&st->z, 63, 53, x - 1, y, 1);
+    zv_line(&st->z, 65, 53, x + 1, y, 1);
+    zv_line(&st->z, 64, 53, x, y, 1);
+    zv_fill(&st->z, 63, 52, 65, 54, 1);
     zv_submit(&st->z);
 }
 

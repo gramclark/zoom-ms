@@ -28,8 +28,8 @@ def draw_scale(canvas, left, right, center, baseline, rise, full_screen=False):
             tick_length = 4 if db % 6 == 0 else 2
             canvas.vline(x, y, y + tick_length)
         for label, x, y in (
-            ("24", 2, 48), ("18", 28, 25), ("12", 60, 5),
-            ("6", 93, 25), ("0", 119, 48),
+            ("24", 5, 43), ("18", 34, 23), ("12", 60, 15),
+            ("6", 86, 23), ("0", 119, 43),
         ):
             canvas.draw_text(label, x, y)
         canvas.draw_text("GR", 3, 2)
@@ -90,7 +90,7 @@ def cover():
 def runtime_background():
     c = Canvas()
     c.rect(1, 1, 126, 62)
-    draw_scale(c, 12, 116, 64, 53, 42, full_screen=True)
+    draw_scale(c, 12, 116, 64, 51, 28, full_screen=True)
     return c
 
 
