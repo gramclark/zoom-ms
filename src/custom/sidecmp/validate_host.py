@@ -15,12 +15,12 @@ manifest = json.loads((HERE / "manifest.json").read_text())
 assert manifest["materialize_init"] is False
 selection_art = (HERE / "selection_art.bin").read_bytes()
 assert len(selection_art) == 1024 and any(selection_art)
-assert not any(selection_art[7 * 128:]), "bottom eight rows must remain clear for pedal knob icons"
+assert any(selection_art[7 * 128:]), "selection art should use the bottom of the full-screen cover"
 assert len(manifest["params"]) == 9
 assert manifest["display_name"] == "Pump It"
 assert all(len(param["name"]) <= 4 for param in manifest["params"])
 assert manifest["params"][5]["max"] == 3
-checks = ["selection art is 128x64, with a clear bottom margin for pedal knob icons"]
+checks = ["selection art uses the full 128x64 cover area"]
 
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
 (OUT / "host.c").write_text(
