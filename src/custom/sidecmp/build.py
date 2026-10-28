@@ -20,15 +20,24 @@ def draw_scale(canvas, left, right, center, baseline, rise, full_screen=False):
         else:
             canvas.vline(x, previous_y, y)
         previous_y = y
-    for x in (left, center - span // 2, center, center + span // 2, right):
-        dx = x - center
-        y = baseline - (rise * (span * span - dx * dx) // (span * span))
-        canvas.vline(x, y, y + 2)
     if full_screen:
-        for label, x, y in (("24", 1, 47), ("12", 61, 5), ("0", 118, 47)):
+        for db in range(0, 25, 2):
+            x = right - ((right - left) * db + 12) // 24
+            dx = x - center
+            y = baseline - (rise * (span * span - dx * dx) // (span * span))
+            tick_length = 4 if db % 6 == 0 else 2
+            canvas.vline(x, y, y + tick_length)
+        for label, x, y in (
+            ("24", 2, 48), ("18", 28, 25), ("12", 60, 5),
+            ("6", 93, 25), ("0", 119, 48),
+        ):
             canvas.draw_text(label, x, y)
-        canvas.draw_text("GR", 59, 1)
+        canvas.draw_text("GR", 3, 2)
     else:
+        for x in (left, center - span // 2, center, center + span // 2, right):
+            dx = x - center
+            y = baseline - (rise * (span * span - dx * dx) // (span * span))
+            canvas.vline(x, y, y + 2)
         for label, x in (("24", 46), ("12", 81), ("0", 117)):
             canvas.draw_text(label, x, 56)
 

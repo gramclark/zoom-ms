@@ -321,7 +321,12 @@ idle_meter.run(stereo(program, key_silent))
 assert lib.sidecmp_frame_pixel(idle_meter.ctx, 1, 1) == 1
 assert lib.sidecmp_frame_pixel(idle_meter.ctx, 116, 53) == 1
 assert lib.sidecmp_frame_pixel(idle_meter.ctx, 64, 11) == 1
+assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
+        for x, y in ((61, 5), (64, 5))] == [1, 1]
+assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
+        for x, y in ((12, 57), (38, 26), (64, 15), (90, 26), (116, 57))] == [1] * 5
 assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
+checks.append("live meter shows 0-24 dB values and major tick marks")
 hard_meter = Instance()
 hard_meter.params[5] = 0.58
 hard_meter.params[6] = 1.0
