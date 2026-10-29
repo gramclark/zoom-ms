@@ -393,9 +393,11 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
             gain = 0.0f;
         }
 
-        reduction = gain < 1.0f ? -level_db(gain) : 0.0f;
-        if (reduction > 24.0f) reduction = 24.0f;
-        st->gr_meter = follow(st->gr_meter, reduction, gr_attack, gr_release);
+        if (visible) {
+            reduction = gain < 1.0f ? -level_db(gain) : 0.0f;
+            if (reduction > 24.0f) reduction = 24.0f;
+            st->gr_meter = follow(st->gr_meter, reduction, gr_attack, gr_release);
+        }
         wet = color_stage(program * gain * makeup, model, 1.0f - gain);
         processed = wet * left_level;
         if (output_mode == 0u || output_mode == 3u) {
