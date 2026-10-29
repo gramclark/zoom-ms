@@ -1,22 +1,22 @@
 {
   "effect_name": "SideCmp",
   "display_name": "Pump It",
-  "comment": "Sidechain compressor: compresses L using R as its detector. Output modes are Sum, Parallel, Comp L, and Div0 Sum (compresses the current Fx-buffer L/R channels and sums to mono). Includes five compressor-inspired responses, a linked output safety limiter, and a live 0-24 dB gain-reduction needle meter. Intended for MS-70CDR 2.10 at 44.1 kHz.",
+  "comment": "Sidechain compressor: compresses the Fx-buffer L signal using R as its detector. Output modes are Sum, Parallel, Comp L, 0Sum, and 0Par. The 0 modes replace RTFM at the group boundary: they use Div0's Dry R signal as the sidechain and route compressed L plus R as a mono sum or separate L/R signals for a following effects group. Use Div0 first, then group 1, Pump It, and group 2; do not also use RTFM. Includes five compressor-inspired responses, a linked output safety limiter, and a live 0-24 dB gain-reduction needle meter. Intended for MS-70CDR 2.10 at 44.1 kHz.",
   "audio_func_name": "Fx_DLY_SideCmp",
   "gid": 1,
   "fxid": 469,
   "fxid_version": "0.01",
   "flags_byte": 1,
-  "materialize_init": false,
+  "materialize_init": true,
   "params": [
     {"name": "Thrs", "type": "knob", "max": 100, "default": 28, "comment": "Sidechain threshold, approximately -80 dBFS to -12 dBFS."},
     {"name": "Rat", "type": "knob", "max": 100, "default": 35, "comment": "Compression from 1:1 to 100:1; the maximum position hard-mutes the compressed signal when the sidechain reaches twice Threshold."},
     {"name": "Atk", "type": "knob", "max": 100, "default": 20, "comment": "Compressor-model-dependent attack control."},
     {"name": "Rel", "type": "knob", "max": 100, "default": 45, "comment": "Compressor-model-dependent release control."},
     {"name": "Make", "type": "knob", "max": 100, "default": 0, "comment": "Post-compression makeup gain from 0 to approximately +24 dB for stronger pumping."},
-    {"name": "Mode", "type": "knob", "max": 3, "default": 0, "labels": ["Sum", "Par", "CmpL", "D0Sm"], "comment": "Output: Sum, Parallel, Comp L, or D0Sm (compress current Fx-buffer L using R as key, then sum to mono)."},
+    {"name": "Mode", "type": "knob", "max": 4, "default": 0, "labels": ["Sum", "Par", "CmpL", "0Sum", "0Par"], "comment": "0Sum and 0Par use Div0's Dry R signal as the key; they route compressed Fx L plus R as mono or separate L/R signals."},
     {"name": "LLev", "type": "knob", "max": 100, "default": 50, "comment": "Output level for compressed L (and its contribution in Sum), 0 to 4x."},
-    {"name": "RLev", "type": "knob", "max": 100, "default": 50, "comment": "Output level for the R sidechain (Sum and Parallel), 0 to 4x."},
+    {"name": "RLev", "type": "knob", "max": 100, "default": 50, "comment": "Output level for the R signal (Sum, Parallel, 0Sum, and 0Par), 0 to 4x."},
     {"name": "Mod", "type": "knob", "max": 4, "default": 3, "labels": ["Opt", "FET", "VMu", "VCA", "Nev"], "comment": "Stepped compressor voicing selector."}
   ],
   "audio_nop": false

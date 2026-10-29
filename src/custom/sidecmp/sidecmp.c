@@ -204,7 +204,7 @@ static inline unsigned output_mode_from_knob(float value)
 {
     unsigned mode = (unsigned)(int)(zoom_param_norm01(value, 0.0f) *
                                     100.0f + 0.5f);
-    return mode > 3u ? 3u : mode;
+    return mode > 4u ? 4u : mode;
 }
 
 ZV_INLINE(model_label)
@@ -230,7 +230,8 @@ static inline int output_label(unsigned value, char *out)
     if (value == 0u) label = "Sum";
     else if (value == 1u) label = "Par";
     else if (value == 2u) label = "CmpL";
-    else label = "D0Sm";
+    else if (value == 3u) label = "0Sum";
+    else label = "0Par";
     for (i = 0u; i < 7u && label[i]; ++i) out[i] = label[i];
     out[i] = 0;
     return (int)i;
@@ -241,6 +242,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
 {
     float *params = (float *)ctx[1];
     float *fx = (float *)ctx[5];
+    float *dry = (float *)ctx[4];
     uintptr_t *desc = (uintptr_t *)ctx[3];
     unsigned int *magic_src = (unsigned int *)ctx[12];
     unsigned int *magic_dst = *(unsigned int **)ctx[11];
@@ -339,7 +341,9 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     limit_release = time_coeff(0.05f);
 
     for (i = 0; i < 8u; ++i) {
-        float program = fx[i], key = fx[i + 8u];
+        unsigned div_mode = output_mode >= 3u;
+        float program = fx[i];
+        float key = div_mode ? dry[i + 8u] : fx[i + 8u];
         float key_level = sanitize_level(key), detector, effective_ratio;
         float knee, gain, wet, processed, output_left, output_right, reduction;
         float peak;
@@ -389,7 +393,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
         if (output_mode == 0u || output_mode == 3u) {
             output_left = processed + key * right_level;
             output_right = output_left;
-        } else if (output_mode == 1u) {
+        } else if (output_mode == 1u || output_mode == 4u) {
             output_left = processed;
             output_right = key * right_level;
         } else {

@@ -12,13 +12,13 @@ OUT = ROOT / "build" / "sidecmp-validation"
 OUT.mkdir(parents=True, exist_ok=True)
 
 manifest = json.loads((HERE / "manifest.json").read_text())
-assert manifest["materialize_init"] is False
+assert manifest["materialize_init"] is True
 selection_art = (HERE / "selection_art.bin").read_bytes()
 assert len(selection_art) == 1024 and any(selection_art)
 assert len(manifest["params"]) == 9
 assert manifest["display_name"] == "Pump It"
 assert all(len(param["name"]) <= 4 for param in manifest["params"])
-assert manifest["params"][5]["max"] == 3
+assert manifest["params"][5]["max"] == 4
 checks = ["selection art uses the full 128x64 cover area"]
 
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
@@ -265,24 +265,39 @@ div0_sum.params[5] = 0.0
 div0_sum.params[6] = 1.0
 div0_sum.params[7] = 0.0
 div0_sum.params[11] = 0.5
-div0_sum.params[12] = 0.0
+div0_sum.params[12] = 0.5
 div0_sum.params[10] = 0.03
-div0_out = div0_sum.run(stereo([0.1] * frames, [0.2] * frames),
-                        stereo([0.4] * frames, [0.0] * frames))
-assert max(abs(value) for value in div0_out[-2048:]) < 1e-6
+div0_out = div0_sum.run(stereo([0.1] * frames, [0.0] * frames),
+                        stereo([0.4] * frames, [0.8] * frames))
+assert max(abs(div0_out[2 * i] - 0.8) for i in range(frames - 1024, frames)) < 1e-6
+assert max(abs(div0_out[2 * i + 1] - 0.8) for i in range(frames - 1024, frames)) < 1e-6
 assert lib.sidecmp_gr_meter(div0_sum.ctx) > 20.0
-div0_clear = Instance()
-div0_clear.params[5] = 0.0
-div0_clear.params[6] = 1.0
-div0_clear.params[7] = 0.0
-div0_clear.params[11] = 0.5
-div0_clear.params[12] = 0.0
-div0_clear.params[10] = 0.03
-div0_clear_out = div0_clear.run(stereo([0.1] * frames, [0.0] * frames),
-                                stereo([0.4] * frames, [0.8] * frames))
-assert max(abs(div0_clear_out[2 * i] - 0.1) for i in range(frames)) < 1e-5
-assert max(abs(div0_clear_out[2 * i + 1] - 0.1) for i in range(frames)) < 1e-5
-checks.append("D0Sm compresses the upstream Fx-buffer L with its R key and sums to mono")
+checks.append("0Sum uses Div0 Dry R to compress Fx L and duplicates the summed result")
+
+div0_parallel = Instance()
+div0_parallel.params[5] = 0.0
+div0_parallel.params[6] = 1.0
+div0_parallel.params[7] = 0.0
+div0_parallel.params[10] = 0.04
+div0_parallel_out = div0_parallel.run(
+    stereo([0.1] * frames, [0.0] * frames),
+    stereo([0.4] * frames, [0.8] * frames))
+assert max(abs(div0_parallel_out[2 * i]) for i in range(frames - 1024, frames)) < 1e-6
+assert max(abs(div0_parallel_out[2 * i + 1] - 0.8)
+           for i in range(frames - 1024, frames)) < 1e-6
+assert lib.sidecmp_gr_meter(div0_parallel.ctx) > 20.0
+checks.append("0Par uses Div0 Dry R to compress Fx L and preserves separate L/R outputs")
+
+div0_requires_dry = Instance()
+div0_requires_dry.params[6] = 1.0
+div0_requires_dry.params[10] = 0.04
+div0_requires_dry_out = div0_requires_dry.run(
+    stereo([0.4] * frames, [0.8] * frames),
+    stereo([0.1] * frames, [0.0] * frames))
+assert max(abs(div0_requires_dry_out[2 * i] - 0.4)
+           for i in range(frames - 1024, frames)) < 1e-5
+assert lib.sidecmp_gr_meter(div0_requires_dry.ctx) < 0.1
+checks.append("0Par does not mistake Fx R for Div0's Dry R key")
 
 limited = Instance()
 limited.params[5] = 1.0
@@ -315,12 +330,12 @@ for value in range(5):
     labels.append(label_buffer.value[:length].decode("ascii"))
 assert labels == ["Opt", "FET", "VMu", "VCA", "Nev"], labels
 output_labels = []
-for value in range(4):
+for value in range(5):
     label_buffer = C.create_string_buffer(8)
     length = lib.sidecmp_output_label(value, label_buffer)
     output_labels.append(label_buffer.value[:length].decode("ascii"))
-assert output_labels == ["Sum", "Par", "CmpL", "D0Sm"], output_labels
-assert [lib.sidecmp_output_from_knob(value * 0.01) for value in range(4)] == list(range(4))
+assert output_labels == ["Sum", "Par", "CmpL", "0Sum", "0Par"], output_labels
+assert [lib.sidecmp_output_from_knob(value * 0.01) for value in range(5)] == list(range(5))
 assert [lib.sidecmp_model_from_knob(value * 0.01) for value in range(5)] == list(range(5))
 checks.append("both pedal selectors have one labeled detent per choice")
 
@@ -337,8 +352,10 @@ assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
                      (116, 43), (116, 45))] == [1] * 6
 assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
         for x, y in ((12, 46), (38, 28), (64, 26), (90, 28), (116, 46))] == [1] * 5
+assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
+        for x, y in ((50, 25), (70, 24), (108, 38))] == [0] * 3
 assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
-checks.append("console-style live meter places numbers above the shorter 0-24 dB arc")
+checks.append("console-style live meter draws scale hash marks without an arc line")
 hard_meter = Instance()
 hard_meter.params[5] = 0.58
 hard_meter.params[6] = 1.0

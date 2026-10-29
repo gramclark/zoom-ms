@@ -11,15 +11,6 @@ from screen_image import Canvas, encode_zoom_rle  # noqa: E402
 
 def draw_scale(canvas, left, right, center, baseline, rise, full_screen=False):
     span = right - center
-    previous_y = None
-    for x in range(left, right + 1):
-        dx = x - center
-        y = baseline - (rise * (span * span - dx * dx) // (span * span))
-        if previous_y is None:
-            canvas.px(x, y)
-        else:
-            canvas.vline(x, previous_y, y)
-        previous_y = y
     if full_screen:
         for db in range(0, 25, 2):
             x = right - ((right - left) * db + 12) // 24
@@ -35,6 +26,15 @@ def draw_scale(canvas, left, right, center, baseline, rise, full_screen=False):
         canvas.draw_text("GR", 3, 2)
         canvas.draw_text("GAIN REDUCTION", 36, 2)
     else:
+        previous_y = None
+        for x in range(left, right + 1):
+            dx = x - center
+            y = baseline - (rise * (span * span - dx * dx) // (span * span))
+            if previous_y is None:
+                canvas.px(x, y)
+            else:
+                canvas.vline(x, previous_y, y)
+            previous_y = y
         for x in (left, center - span // 2, center, center + span // 2, right):
             dx = x - center
             y = baseline - (rise * (span * span - dx * dx) // (span * span))
