@@ -261,14 +261,28 @@ for mode, expected_left, expected_right in (
 checks.append("hard duck preserves Sum, Parallel, and Comp L output routing")
 
 div0_sum = Instance()
-div0_sum.params[5] = 1.0
-div0_sum.params[6] = 0.0
+div0_sum.params[5] = 0.0
+div0_sum.params[6] = 1.0
+div0_sum.params[7] = 0.0
+div0_sum.params[11] = 0.5
+div0_sum.params[12] = 0.0
 div0_sum.params[10] = 0.03
-div0_out = div0_sum.run(stereo([0.0] * frames, [0.0] * frames),
-                        stereo([0.1] * frames, [0.2] * frames))
-assert max(abs(div0_out[2 * i] - 0.3) for i in range(frames)) < 1e-5
-assert max(abs(div0_out[2 * i + 1] - 0.3) for i in range(frames)) < 1e-5
-checks.append("D0Sm reads separate Div0 Dry L/R channels and sums both to mono")
+div0_out = div0_sum.run(stereo([0.1] * frames, [0.2] * frames),
+                        stereo([0.4] * frames, [0.0] * frames))
+assert max(abs(value) for value in div0_out[-2048:]) < 1e-6
+assert lib.sidecmp_gr_meter(div0_sum.ctx) > 20.0
+div0_clear = Instance()
+div0_clear.params[5] = 0.0
+div0_clear.params[6] = 1.0
+div0_clear.params[7] = 0.0
+div0_clear.params[11] = 0.5
+div0_clear.params[12] = 0.0
+div0_clear.params[10] = 0.03
+div0_clear_out = div0_clear.run(stereo([0.1] * frames, [0.0] * frames),
+                                stereo([0.4] * frames, [0.8] * frames))
+assert max(abs(div0_clear_out[2 * i] - 0.1) for i in range(frames)) < 1e-5
+assert max(abs(div0_clear_out[2 * i + 1] - 0.1) for i in range(frames)) < 1e-5
+checks.append("D0Sm compresses the upstream Fx-buffer L with its R key and sums to mono")
 
 limited = Instance()
 limited.params[5] = 1.0

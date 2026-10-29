@@ -241,7 +241,6 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
 {
     float *params = (float *)ctx[1];
     float *fx = (float *)ctx[5];
-    float *dry = (float *)ctx[4];
     uintptr_t *desc = (uintptr_t *)ctx[3];
     unsigned int *magic_src = (unsigned int *)ctx[12];
     unsigned int *magic_dst = *(unsigned int **)ctx[11];
@@ -340,8 +339,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     limit_release = time_coeff(0.05f);
 
     for (i = 0; i < 8u; ++i) {
-        float *input = output_mode == 3u && dry ? dry : fx;
-        float program = input[i], key = input[i + 8u];
+        float program = fx[i], key = fx[i + 8u];
         float key_level = sanitize_level(key), detector, effective_ratio;
         float knee, gain, wet, processed, output_left, output_right, reduction;
         float peak;
