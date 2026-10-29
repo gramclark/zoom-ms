@@ -15,7 +15,9 @@ manifest = json.loads((HERE / "manifest.json").read_text())
 assert manifest["materialize_init"] is False
 selection_art = (HERE / "selection_art.bin").read_bytes()
 assert len(selection_art) == 1024 and any(selection_art)
-assert any(selection_art[7 * 128:]), "selection art should use the bottom of the full-screen cover"
+assert any(selection_art[7 * 128:]), "selection art should extend into the lower cover"
+assert not any(value & 0xFC for value in selection_art[7 * 128:]), \
+    "selection art should leave the bottom six rows clear"
 assert len(manifest["params"]) == 9
 assert manifest["display_name"] == "Pump It"
 assert all(len(param["name"]) <= 4 for param in manifest["params"])
