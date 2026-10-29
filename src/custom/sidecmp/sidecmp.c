@@ -176,7 +176,7 @@ ZV_INLINE(gr_meter_y)
 static inline int gr_meter_y(float reduction)
 {
     int dx = gr_meter_x(reduction) - 64;
-    return 43 - (28 * (2704 - dx * dx) / 2704);
+    return 43 - (20 * (2704 - dx * dx) / 2704);
 }
 
 ZV_INLINE(draw_gr_meter)

@@ -311,7 +311,7 @@ assert [lib.sidecmp_model_from_knob(value * 0.01) for value in range(5)] == list
 checks.append("both pedal selectors have one labeled detent per choice")
 
 assert [lib.sidecmp_gr_meter_x(x) for x in (0.0, 12.0, 24.0)] == [116, 64, 12]
-assert [lib.sidecmp_gr_meter_y(x) for x in (0.0, 12.0, 24.0)] == [43, 15, 43]
+assert [lib.sidecmp_gr_meter_y(x) for x in (0.0, 12.0, 24.0)] == [43, 23, 43]
 assert lib.sidecmp_gr_meter_x(48.0) == 12
 checks.append("needle sweeps across the full-screen 0-24 dB gain-reduction meter")
 assert lib.sidecmp_picture() == 1
@@ -319,9 +319,10 @@ idle_meter = Instance()
 idle_meter.run(stereo(program, key_silent))
 assert lib.sidecmp_frame_pixel(idle_meter.ctx, 1, 1) == 1
 assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
-        for x, y in ((64, 7), (65, 7), (116, 43), (116, 45))] == [1] * 4
+        for x, y in ((4, 2), (37, 2), (38, 2), (64, 10),
+                     (116, 43), (116, 45))] == [1] * 6
 assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
-        for x, y in ((12, 46), (38, 25), (64, 18), (90, 25), (116, 46))] == [1] * 5
+        for x, y in ((12, 46), (38, 28), (64, 26), (90, 28), (116, 46))] == [1] * 5
 assert lib.sidecmp_gr_meter(idle_meter.ctx) == 0.0
 checks.append("console-style live meter places numbers above the shorter 0-24 dB arc")
 hard_meter = Instance()
