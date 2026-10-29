@@ -10,7 +10,7 @@
   "materialize_init": true,
   "params": [
     {"name": "Thrs", "type": "knob", "max": 100, "default": 28, "comment": "Sidechain threshold, approximately -80 dBFS to -12 dBFS."},
-    {"name": "Rat", "type": "knob", "max": 100, "default": 35, "comment": "Compression from 1:1 to 100:1; the maximum position hard-mutes the compressed signal when the sidechain reaches twice Threshold."},
+    {"name": "Rat", "type": "knob", "max": 100, "default": 35, "comment": "Compression from 1:1 to 100:1, blending smoothly into Duck over the top 10% of knob travel. At maximum, displays Duck and hard-mutes the compressed signal when the sidechain reaches twice Threshold."},
     {"name": "Atk", "type": "knob", "max": 100, "default": 20, "comment": "Compressor-model-dependent attack control."},
     {"name": "Rel", "type": "knob", "max": 100, "default": 45, "comment": "Compressor-model-dependent release control."},
     {"name": "Make", "type": "knob", "max": 100, "default": 0, "comment": "Post-compression makeup gain from 0 to approximately +24 dB for stronger pumping."},

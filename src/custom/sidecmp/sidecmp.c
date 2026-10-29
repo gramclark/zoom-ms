@@ -380,9 +380,17 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
             st->neve_gain = follow_gain(st->neve_gain, gain, attack, release);
             gain = st->neve_gain;
         }
-        if (hard_duck && detector > threshold) {
-            if (detector >= 2.0f * threshold) gain = 0.0f;
-            else gain *= 2.0f - detector * recip_approx_pos(threshold);
+        {
+            float duck_blend = clamp01((ratio_norm - 0.90f) * 10.0f);
+            float duck_gain;
+            duck_blend = duck_blend * duck_blend * (3.0f - 2.0f * duck_blend);
+            if (detector <= threshold) duck_gain = 1.0f;
+            else if (detector >= 2.0f * threshold) duck_gain = 0.0f;
+            else duck_gain = 2.0f - detector * recip_approx_pos(threshold);
+            gain += duck_blend * (duck_gain - gain);
+        }
+        if (hard_duck && detector >= 2.0f * threshold) {
+            gain = 0.0f;
         }
 
         reduction = gain < 1.0f ? -level_db(gain) : 0.0f;
@@ -427,6 +435,26 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
 int ZDL_GetLabel_5(unsigned int value, char *out)
 {
     return output_label(value, out);
+}
+
+int ZDL_GetLabel_1(unsigned int value, char *out)
+{
+    unsigned tens, ones;
+    if (value >= 100u) {
+        out[0] = 'D'; out[1] = 'u'; out[2] = 'c'; out[3] = 'k'; out[4] = 0;
+        return 4;
+    }
+    tens = value / 10u;
+    ones = value % 10u;
+    if (tens) {
+        out[0] = (char)('0' + tens);
+        out[1] = (char)('0' + ones);
+        out[2] = 0;
+        return 2;
+    }
+    out[0] = (char)('0' + ones);
+    out[1] = 0;
+    return 1;
 }
 
 int ZDL_GetLabel_8(unsigned int value, char *out)

@@ -34,6 +34,7 @@ subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=Tru
     "float sidecmp_gr_meter(uintptr_t *ctx) { uintptr_t *d=(uintptr_t *)ctx[3]; return ((SideCmpState *)d[0])->gr_meter; }\n"
     "int sidecmp_model_label(unsigned value, char *out) { return model_label(value, out); }\n"
     "int sidecmp_output_label(unsigned value, char *out) { return output_label(value, out); }\n"
+    "int sidecmp_ratio_label(unsigned value, char *out) { return ZDL_GetLabel_1(value, out); }\n"
     "unsigned sidecmp_model_from_knob(float value) { return model_from_knob(value); }\n"
     "unsigned sidecmp_output_from_knob(float value) { return output_mode_from_knob(value); }\n"
     "float sidecmp_limiter_gain(uintptr_t *ctx) { uintptr_t *d=(uintptr_t *)ctx[3]; return ((SideCmpState *)d[0])->limit_gain; }\n"
@@ -70,6 +71,8 @@ lib.sidecmp_model_label.argtypes = [C.c_uint, C.c_char_p]
 lib.sidecmp_model_label.restype = C.c_int
 lib.sidecmp_output_label.argtypes = [C.c_uint, C.c_char_p]
 lib.sidecmp_output_label.restype = C.c_int
+lib.sidecmp_ratio_label.argtypes = [C.c_uint, C.c_char_p]
+lib.sidecmp_ratio_label.restype = C.c_int
 lib.sidecmp_model_from_knob.argtypes = [C.c_float]
 lib.sidecmp_model_from_knob.restype = C.c_uint
 lib.sidecmp_output_from_knob.argtypes = [C.c_float]
@@ -244,7 +247,28 @@ near_max.params[13] = 0.01
 near_max_out = near_max.run(stereo(program, key_loud))
 assert max(abs(near_max_out[2 * i])
            for i in range(frames - 1024, frames)) > 0.0
-checks.append("hard duck is reserved for the maximum Ratio position")
+
+near_duck = Instance()
+near_duck.params[5] = 0.0
+near_duck.params[6] = 0.90
+near_duck.params[7] = 0.0
+near_duck.params[10] = 0.01
+near_duck_out = near_duck.run(stereo(program, key_loud))
+near_duck_level = sum(abs(near_duck_out[2 * i])
+                      for i in range(frames - 1024, frames)) / 1024
+near_max_level = sum(abs(near_max_out[2 * i])
+                     for i in range(frames - 1024, frames)) / 1024
+assert 0.0 < near_max_level < near_duck_level * 0.1, (
+    near_duck_level, near_max_level)
+checks.append("Duck blend ramps over the top 10% while only maximum Ratio reaches exact silence")
+
+ratio_labels = []
+for value in (99, 100):
+    label_buffer = C.create_string_buffer(8)
+    length = lib.sidecmp_ratio_label(value, label_buffer)
+    ratio_labels.append(label_buffer.value[:length].decode("ascii"))
+assert ratio_labels == ["99", "Duck"], ratio_labels
+checks.append("Ratio displays Duck at its maximum detent")
 
 for mode, expected_left, expected_right in (
         (0.0, 0.8, 0.8), (0.01, 0.0, 0.8), (0.02, 0.0, 0.0)):
