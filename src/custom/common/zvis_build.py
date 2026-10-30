@@ -14,13 +14,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-for p in (ROOT / "build", ROOT / "src" / "airwindows" / "common"):
-    if str(p) not in sys.path:
-        sys.path.insert(0, str(p))
+if str(ROOT / "build") not in sys.path:
+    sys.path.insert(0, str(ROOT / "build"))
 
 from linker import LinkerConfig, ObjFile, link, params_from_manifest  # noqa: E402
-from screen_image import Canvas, encode_zoom_rle  # noqa: E402,F401
-from stock_style_covers import round_shape, fill  # noqa: E402,F401
 from zdl_size_guard import check as size_check  # noqa: E402
 from make_em_thumbnails import render as em_thumbnail  # noqa: E402
 

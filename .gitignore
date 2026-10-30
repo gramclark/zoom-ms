@@ -1,0 +1,5 @@
+.DS_Store
+src/custom/sidecmp/*.obj
+src/custom/sidecmp/compiler.opt
+src/custom/sidecmp/linker.cmd
+build/sidecmp-validation/
