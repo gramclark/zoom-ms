@@ -1,23 +1,31 @@
-<img width="128" height="96" alt="SideCmp (3)" src="https://github.com/user-attachments/assets/d0a37470-30a2-4008-9d7a-b438daaf8e82" />
+<img width="512" height="288" alt="SideCmp (3)" src="https://github.com/user-attachments/assets/d0a37470-30a2-4008-9d7a-b438daaf8e82" />
 
 # Pump It
 
 Pump It is a sidechain compressor for the Zoom MS-70CDR running firmware 2.10 
-at 44.1 kHz. Install `dist/SideCmp.ZDL` with Zoom Effect Manager.
+at 44.1 kHz. Install `dist/SideCmp.ZDL` with [Zoom Effect Manager](https://zoomeffectmanager.com/en/download/).
 Back up the pedal's patches and effect list before installing custom effects.
 
 ## Routing (Mode setting)
 
-In the standard modes, Pump It compresses the left signal using the right
-signal at its position in the chain as the detector. `Sum` mixes the weighted
-compressed left and right signals to both outputs; `Par` keeps them separate;
-`CmpL` sends compressed left to both outputs.
+When engaged, Pump It compresses the left signal using the right signal. The 
+`Mode` setting changes signal routing for a few different use cases: 
+`Sum` creates a summed mixdown of both channels post-compression, useful if 
+running mono out from the pedal; `Par` keeps them separate L and R outputs; 
+`CmpL` outputs only the processed L channel on both outputs.
 
-`0Sum` and `0Par` are intended to replace RTFM at a Div0 group boundary:
-Div0 → group 1 → Pump It → group 2. They use Div0's separated Dry R as the
-detector and output either a mono sum or separate left/right signals. This 
-allows you to apply effects to only the L channel — placing reverb and delay 
-effects between Div0 and Pump it will accentuate the ducking effect.
+**`0Sum` and `0Par` work with Div0 to put effects on the L channel before 
+compression, while keeping the R channel dry.** In these modes Pump It 
+replaces RTFM at a Div0 group boundary. So to use effects on just the L channel, 
+your chain should look like:
+
+Pump It ← L channel effects (aka group 1) ← Div0 
+
+Placing time-based effects like reverb and delay between Div0 and Pump it will 
+accentuate the ducking effect.`0Sum` then outputs a mixdown of both channels, 
+`0Par` outputs separate left/right signals.
+
+[Div0 is included in the Zoom Effects Manager, download that here](https://zoomeffectmanager.com/en/download/)
 
 ## Notes on Controls
 
@@ -28,14 +36,14 @@ Ratio values have a normal compression effect, but at the highest Ratio levels
 the gain reduction is extra intense. This is to better enable users to truly 
 PUMP IT. When Ratio is at maximum, the L signal will be hard ducked to zero.
 
-Threshold (Thurs), Attack (Atk), Release (Rel) and Makeup (Make) params are as 
+Threshold (`Thrs`), Attack (`Atk`), Release (`Rel`) and Makeup (`Make`) params are as 
 standard. 
 
-There are controls to adjust L and R channel volume levels (LLev and RLev, 
+There are controls to adjust L and R channel volume levels (`LLev` and `RLev`, 
 respectively). These are especially useful on Sum or 0Sum modes where both 
 channels are mixed down before output.
 
-Users can choose a compressor model (Mod) to emulate with the Mod setting: 
+Users can choose a compressor model (`Mod`) to emulate with the Mod setting: 
 Optical, FET, Vari-Mu, VCA or Neve. These will effect the voicing and speed of 
 compressor behavior.
 
