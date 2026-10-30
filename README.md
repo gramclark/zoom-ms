@@ -2,8 +2,8 @@
 
 # Pump It
 
-Pump It is a sidechain compressor for the Zoom MS-70CDR running firmware 2.10 
-at 44.1 kHz. Install `dist/SideCmp.ZDL` with [Zoom Effect Manager](https://zoomeffectmanager.com/en/download/).
+Pump It is a sidechain compressor for the Zoom MS-70CDR.
+Install `dist/SideCmp.ZDL` with [Zoom Effect Manager](https://zoomeffectmanager.com/en/download/).
 Back up the pedal's patches and effect list before installing custom effects.
 
 ## Routing (Mode setting)
@@ -49,6 +49,10 @@ compressor behavior.
 
 ## Build and test
 
+This is not necessary to install Pump It on your pedal. For that just download the .zdl 
+file, add it to your Zoom Effect Manager folder and select it when choosing effects 
+to push to your CDR pedal.
+
 Building requires Python 3, Pillow, and TI C6000 CGT 8.3.15 (or a compatible
 compiler). Set `TI_CGT_ROOT` to the compiler installation directory:
 
@@ -67,18 +71,21 @@ python3 src/custom/sidecmp/validate_host.py
 
 ## Hardware notes
 
+This is designed for the MS-70CDR running firmware 2.10 at 44.1 kHz.
+
 The build declares a generic DSP cost of 8.0; this is not a measured guarantee
-that a long effects chain will fit. I have experienced a freeze while adding an
-effect with Pump It active, several other effects in the chain, and the custom
-Looper running in experimental Long mode. This repository does not include the
-Looper, and the cause has not been isolated. Keep Long mode off when editing
-large chains, restart the pedal and reduce effects in the chain if the pedal becomes unresponsive.
+that a long effects chain will fit. I have experienced a freeze when running 
+themanro's custom Looper in experimental Long mode and adding an effect with 
+Pump It active, as well as several other effects in the chain. This repository 
+does not include the Looper, and the cause has not been isolated. Maybe keep 
+Long mode off if looping and editing large chains for now. If the pedal becomes 
+unresponsive, restart the pedal and reduce effects in the chain.
 
 The shared linker and UI support code are retained under `build/` and
 `src/custom/common/`; other project effects and research files are not included.
 
 ## Credits
 
-- [themanro/ZoomMultistompZDL](https://github.com/themanro/ZoomMultistompZDL) — upstream project and code/toolchain source.
-- [ELynx/zoom-fx-modding](https://github.com/ELynx/zoom-fx-modding) — Div0 and RTFM creator, routing references, visionary Zoom custom effects creation leadership.
-- [matujuice/zoom-ms-midistomp](https://github.com/matujuice/zoom-ms-midistomp) — MS-70CDR research, firmware notes, and project inspiration.
+- [themanro/ZoomMultistompZDL](https://github.com/themanro/ZoomMultistompZDL) — upstream project and code/toolchain source, multistomp modding kingpin.
+- [ELynx/zoom-fx-modding](https://github.com/ELynx/zoom-fx-modding) — Div0 and RTFM creator, routing references and visionary Zoom custom effects creation leadership.
+- [matujuice/zoom-ms-midistomp](https://github.com/matujuice/zoom-ms-midistomp) — MS-70CDR research, firmware notes and project inspiration and dubsiren hero.
