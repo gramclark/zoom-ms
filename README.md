@@ -1,7 +1,7 @@
 # Pump It
 
-Pump It is a nine-control sidechain compressor for the Zoom MS-70CDR running
-firmware 2.10 at 44.1 kHz. Install `dist/SideCmp.ZDL` with Zoom Effect Manager.
+Pump It is a sidechain compressor for the Zoom MS-70CDR running firmware 2.10 
+at 44.1 kHz. Install `dist/SideCmp.ZDL` with Zoom Effect Manager.
 Back up the pedal's patches and effect list before installing custom effects.
 
 ## Routing (Mode setting)
