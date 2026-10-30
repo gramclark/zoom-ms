@@ -1,3 +1,5 @@
+<img width="128" height="96" alt="SideCmp (3)" src="https://github.com/user-attachments/assets/d0a37470-30a2-4008-9d7a-b438daaf8e82" />
+
 # Pump It
 
 Pump It is a sidechain compressor for the Zoom MS-70CDR running firmware 2.10 
