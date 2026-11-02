@@ -371,9 +371,9 @@ assert lib.sidecmp_picture() == 1
 idle_meter = Instance()
 idle_meter.run(stereo(program, key_silent))
 assert lib.sidecmp_frame_pixel(idle_meter.ctx, 1, 1) == 1
+assert lib.sidecmp_frame_pixel(idle_meter.ctx, 4, 2) == 0
 assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
-        for x, y in ((4, 2), (37, 2), (38, 2), (64, 10),
-                     (116, 43), (116, 45))] == [1] * 6
+        for x, y in ((37, 2), (38, 2), (64, 10), (116, 43), (116, 45))] == [1] * 5
 assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)
         for x, y in ((12, 46), (38, 28), (64, 26), (90, 28), (116, 46))] == [1] * 5
 assert [lib.sidecmp_frame_pixel(idle_meter.ctx, x, y)

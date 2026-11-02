@@ -23,7 +23,6 @@ def draw_scale(canvas, left, right, center, baseline, rise, full_screen=False):
             ("6", 86, 18), ("0", 119, 35),
         ):
             canvas.draw_text(label, x, y)
-        canvas.draw_text("GR", 3, 2)
         canvas.draw_text("GAIN REDUCTION", 36, 2)
     else:
         previous_y = None

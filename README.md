@@ -73,13 +73,12 @@ python3 src/custom/sidecmp/validate_host.py
 
 This is designed for the MS-70CDR running firmware 2.10 at 44.1 kHz.
 
-The build declares a generic DSP cost of 8.0; this is not a measured guarantee
-that a long effects chain will fit. I have experienced a freeze when running 
-themanro's custom Looper in experimental Long mode and adding an effect with 
-Pump It active, as well as several other effects in the chain. This repository 
-does not include the Looper, and the cause has not been isolated. Maybe keep 
-Long mode off if looping and editing large chains for now. If the pedal becomes 
-unresponsive, restart the pedal and reduce effects in the chain.
+The build declares a conservative DSP cost of 31.0, estimated against stock
+compressors (DualComp 29.44, OptComp 30.76). This is not a hardware measurement
+or a guarantee that a long effects chain will fit. Freezes have occurred under
+high processing load with Pump It and several other effects active. The Looper
+was running in Long mode in one reported case, but it has not been identified
+as the cause. Reduce the chain if the pedal becomes unresponsive.
 
 The shared linker and UI support code are retained under `build/` and
 `src/custom/common/`; other project effects and research files are not included.

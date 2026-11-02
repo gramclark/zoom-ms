@@ -26,7 +26,7 @@ CFLAGS = ["--c99", "--opt_level=2", "--interrupt_threshold=1", "-mv6740", "--abi
           f"--include_path={TI_ROOT}/include", f"--include_path={ROOT}/src/airwindows/common",
           f"--include_path={ROOT}/src/custom/common",
           f"--include_path={HERE}"]
-DSP_COST = 8.0          # real load ~600 cycles/callback average vs NAM ~15,000 (emulator)
+DSP_COST = 31.0         # Conservative compressor estimate; not hardware-measured.
 
 
 def raw(c):
