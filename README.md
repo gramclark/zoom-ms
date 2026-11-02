@@ -16,8 +16,8 @@ running mono out from the pedal; `Par` keeps them separate L and R outputs;
 
 **`0Sum` and `0Par` work with Div0 to put effects on the L channel before 
 compression, while keeping the R channel dry.** In these modes Pump It 
-replaces RTFM at a Div0 group boundary. So to use effects on just the L channel, 
-your chain should look like:
+replaces RTFM. So to use effects on just the L channel, your chain should 
+look like:
 
 Pump It ← L channel effects (aka group 1) ← Div0 
 
@@ -76,9 +76,8 @@ This is designed for the MS-70CDR running firmware 2.10 at 44.1 kHz.
 The build declares a conservative DSP cost of 31.0, estimated against stock
 compressors (DualComp 29.44, OptComp 30.76). This is not a hardware measurement
 or a guarantee that a long effects chain will fit. Freezes have occurred under
-high processing load with Pump It and several other effects active. The Looper
-was running in Long mode in one reported case, but it has not been identified
-as the cause. Reduce the chain if the pedal becomes unresponsive.
+high processing load with Pump It and several other effects active. If the pedal 
+becomes unresponsive, restart the device and reduced effects in the chain.
 
 The shared linker and UI support code are retained under `build/` and
 `src/custom/common/`; other project effects and research files are not included.
