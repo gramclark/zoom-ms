@@ -6,7 +6,7 @@ Pump It is a sidechain compressor for the Zoom MS-70CDR.
 Install `dist/SideCmp.ZDL` with [Zoom Effect Manager](https://zoomeffectmanager.com/en/download/).
 Back up the pedal's patches and effect list before installing custom effects.
 
-## Routing (Mode setting)
+## Mixdown Options and Routing (Mode setting)
 
 When engaged, Pump It compresses the left signal using the right signal. The 
 `Mode` setting changes signal routing for a few different use cases: 
