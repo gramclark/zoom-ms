@@ -14,13 +14,15 @@ When engaged, Pump It compresses the left signal using the right signal. The
 running mono out from the pedal; `Par` keeps them separate L and R outputs; 
 `CmpL` outputs only the processed L channel on both outputs.
 
-**`0Sum` and `0Par` work with Div0 to put effects on the L channel before 
-compression, while keeping the R channel dry.** In these modes Pump It 
-replaces RTFM. So to use effects on just the L channel, your chain should 
-look like:
+**`0Sum` and `0Par` allow you to put effects on the L channel before 
+compression while keeping the R channel dry.** This is possible by using Div0, 
+one of the first homebrewed Zoom effects, earlier in the chain. If you're familiar 
+with Div0, think of Pump It as replacing RTFM. 
 
-Pump It ← L channel effects (aka group 1) ← Div0 
-
+**So to use effects on just the L channel, your chain should look like:
+**
+**Pump It ← L channel effects (aka group 1) ← Div0 
+**
 Placing time-based effects like reverb and delay between Div0 and Pump it will 
 accentuate the ducking effect.`0Sum` then outputs a mixdown of both channels, 
 `0Par` outputs separate left/right signals.
