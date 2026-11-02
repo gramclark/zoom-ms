@@ -31,7 +31,7 @@ accentuate the ducking effect.`0Sum` then outputs a mixdown of both channels,
 
 Other parameters should be intuitive, with a few notes.
 
-The compressor's Ratio (Ratio) setting is biased to enable hard ducking. Lower 
+The compressor's Ratio (`Ratio`) setting is biased to enable hard ducking. Lower 
 Ratio values have a normal compression effect, but at the highest Ratio levels 
 the gain reduction is extra intense. This is to better enable users to truly 
 PUMP IT. When Ratio is at maximum, the L signal will be hard ducked to zero.
