@@ -31,19 +31,19 @@ accentuate the ducking effect.`0Sum` then outputs a mixdown of both channels,
 
 Other parameters should be intuitive, with a few notes.
 
-The compressor's Ratio (Rat) setting is biased to enable hard ducking. Lower 
+The compressor's Ratio (Ratio) setting is biased to enable hard ducking. Lower 
 Ratio values have a normal compression effect, but at the highest Ratio levels 
 the gain reduction is extra intense. This is to better enable users to truly 
 PUMP IT. When Ratio is at maximum, the L signal will be hard ducked to zero.
 
-Threshold (`Thrs`), Attack (`Atk`), Release (`Rel`) and Makeup (`Make`) params are as 
-standard. 
+Threshold (`Thrs`), Attack (`Atk`), Release (`Rel`) and Makeup (`MkUp`) params 
+behave as standard for compressors. 
 
-There are controls to adjust L and R channel volume levels (`LLev` and `RLev`, 
+There are controls to adjust L and R channel volume levels (`LVol` and `RVol`, 
 respectively). These are especially useful on Sum or 0Sum modes where both 
 channels are mixed down before output.
 
-Users can choose a compressor model (`Mod`) to emulate with the Mod setting: 
+Users can choose a compressor model (`Model`) to emulate with the Mod setting: 
 Optical, FET, Vari-Mu, VCA or Neve. These will effect the voicing and speed of 
 compressor behavior.
 
