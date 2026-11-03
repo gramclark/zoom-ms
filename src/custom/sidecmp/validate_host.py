@@ -17,8 +17,13 @@ selection_art = (HERE / "selection_art.bin").read_bytes()
 assert len(selection_art) == 1024 and any(selection_art)
 assert len(manifest["params"]) == 9
 assert manifest["display_name"] == "Pump It"
-assert all(len(param["name"]) <= 4 for param in manifest["params"])
+assert [param["name"] for param in manifest["params"]] == [
+    "Thrs", "Ratio", "Atk", "Rel", "Type", "Mode", "LVol", "RVol", "MkUp"
+]
+assert all(len(param["name"]) <= 5 for param in manifest["params"])
 assert manifest["params"][5]["max"] == 4
+assert manifest["params"][4]["labels"] == ["Opt", "FET", "VMu", "VCA", "Nev"]
+assert manifest["params"][5]["labels"] == ["Sum", "Par", "CmpL", "0Sum", "0Par"]
 checks = ["selection art uses the full 128x64 cover area"]
 
 subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=True)
@@ -32,7 +37,7 @@ subprocess.run([sys.executable, str(HERE / "build.py"), "--art-only"], check=Tru
     "  return !!(s->z.frame[(y >> 3u) * ZV_W + x] & (1u << (y & 7u)));\n"
     "}\n"
     "float sidecmp_gr_meter(uintptr_t *ctx) { uintptr_t *d=(uintptr_t *)ctx[3]; return ((SideCmpState *)d[0])->gr_meter; }\n"
-    "int sidecmp_model_label(unsigned value, char *out) { return model_label(value, out); }\n"
+    "int sidecmp_model_label(unsigned value, char *out) { return ZDL_GetLabel_4(value, out); }\n"
     "int sidecmp_output_label(unsigned value, char *out) { return output_label(value, out); }\n"
     "int sidecmp_ratio_label(unsigned value, char *out) { return ZDL_GetLabel_1(value, out); }\n"
     "unsigned sidecmp_model_from_knob(float value) { return model_from_knob(value); }\n"
@@ -94,8 +99,8 @@ class Instance:
         C.memset(C.addressof(self.arena), 0xA5, C.sizeof(self.arena))
         self.base = C.addressof(self.arena) + 16
         self.params = (C.c_float * 14)(
-            1, 0, 0, 0, 0, 0.28, 0.35, 0.20, 0.45, 0,
-            0, 0.5, 0.5, 0.03
+            1, 0, 0, 0, 0, 0.28, 0.35, 0.20, 0.45, 0.03,
+            0, 0.5, 0.5, 0
         )
         self.dry = (C.c_float * 16)()
         self.desc = (C.c_size_t * 2)(self.base, self.base + self.size)
@@ -216,7 +221,7 @@ pump.params[5] = 0.58
 pump.params[6] = 1.0
 pump.params[7] = 0.0
 pump.params[8] = 0.0
-pump.params[9] = 1.0
+pump.params[13] = 1.0
 pump.params[10] = 0.01
 pump_out = pump.run(stereo(program, key_loud[:frames // 2] +
                            key_silent[frames // 2:]))
@@ -232,7 +237,7 @@ for model in range(5):
     hard_duck.params[6] = 1.0
     hard_duck.params[7] = 0.0
     hard_duck.params[10] = 0.01
-    hard_duck.params[13] = model * 0.01
+    hard_duck.params[9] = model * 0.01
     hard_duck_out = hard_duck.run(stereo(program, key_loud))
     assert max(abs(hard_duck_out[2 * i])
                for i in range(frames - 1024, frames)) == 0.0, model
@@ -243,7 +248,7 @@ near_max.params[5] = 0.0
 near_max.params[6] = 0.99
 near_max.params[7] = 0.0
 near_max.params[10] = 0.01
-near_max.params[13] = 0.01
+near_max.params[9] = 0.01
 near_max_out = near_max.run(stereo(program, key_loud))
 assert max(abs(near_max_out[2 * i])
            for i in range(frames - 1024, frames)) > 0.0
@@ -277,7 +282,7 @@ for mode, expected_left, expected_right in (
     routed.params[6] = 1.0
     routed.params[7] = 0.0
     routed.params[10] = mode
-    routed.params[13] = 0.01
+    routed.params[9] = 0.01
     routed_out = routed.run(stereo(program, key_loud))
     tail = range(frames - 1024, frames)
     assert max(abs(routed_out[2 * i] - expected_left) for i in tail) < 1e-6
@@ -326,7 +331,7 @@ checks.append("0Par does not mistake Fx R for Div0's Dry R key")
 limited = Instance()
 limited.params[5] = 1.0
 limited.params[6] = 0.0
-limited.params[9] = 1.0
+limited.params[13] = 1.0
 limited.params[10] = 0.0
 limited.params[11] = 1.0
 limited.params[12] = 1.0
@@ -342,7 +347,7 @@ for model in range(5):
     instance.params[6] = 0.60
     instance.params[7] = 0.0
     instance.params[10] = 0.01
-    instance.params[13] = model * 0.01
+    instance.params[9] = model * 0.01
     output = instance.run(stereo(program, key_loud))
     model_levels.append(sum(abs(output[2 * i]) for i in range(frames - 1024, frames)) / 1024)
 assert all(0.0 < level < 0.4 for level in model_levels), model_levels
