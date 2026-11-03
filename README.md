@@ -9,7 +9,7 @@ Back up the pedal's patches and effect list before installing custom effects.
 Hardware options for real-time, sidechained compression have been relatively limited or expensive before.
 Now you can now use this [staple sound of techno, house](https://youtu.be/pDmLr-uHP40?si=QF-APTjY30Ws-Bm-) and many other types of music live with only your MS-70CDR. 
 
-## Mixdown Options and Routing (Mode setting)
+## Mixdown options and routing (Mode setting)
 
 When engaged, Pump It compresses the left signal using the dynamics of the right signal. The 
 `Mode` setting changes signal routing for a few different use cases: 
@@ -32,7 +32,7 @@ accentuate the ducking effect.`0Sum` then outputs a mixdown of both channels,
 
 [Div0 is included in the Zoom Effects Manager, download that here](https://zoomeffectmanager.com/en/download/)
 
-## Notes on Controls
+## Notes on controls
 
 Other parameters should be intuitive, with a few notes.
 
@@ -42,7 +42,7 @@ The nine controls are laid out like this:
 - **Page 2:** `Rel`, `Type`, `Mode`
 - **Page 3:** `LVol`, `RVol`, `MkUp`
 
-The compressor's Ratio setting is biased to enable hard ducking. Lower Ratio
+The compressor's `Ratio` setting is biased to enable hard ducking. Lower Ratio
 values have a normal compression effect, but at the highest Ratio levels the
 gain reduction is extra intense. This is to better enable users to truly
 PUMP IT. When Ratio is at maximum, the L signal will be hard ducked to zero.
