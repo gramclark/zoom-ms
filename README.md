@@ -11,7 +11,7 @@ Now you can now use this [staple sound of techno, house](https://youtu.be/pDmLr-
 
 ## Mixdown Options and Routing (Mode setting)
 
-When engaged, Pump It compresses the left signal using the right signal. The 
+When engaged, Pump It compresses the left signal using the dynamics of the right signal. The 
 `Mode` setting changes signal routing for a few different use cases: 
 `Sum` creates a summed mixdown of both channels post-compression, useful if 
 running mono out from the pedal; `Par` keeps them separate L and R outputs; 
