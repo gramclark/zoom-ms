@@ -50,13 +50,13 @@ PUMP IT. When Ratio is at maximum, the L signal will be hard ducked to zero.
 Threshold (`Thrs`), Attack (`Atk`), Release (`Rel`) and Makeup (`MkUp`) params
 behave as standard for compressors.
 
-There are controls to adjust L and R channel volume levels (`LVol` and `RVol`,
-respectively). These are especially useful on Sum or 0Sum modes where both
-channels are mixed down before output.
-
 Users can choose a compressor model with the `Type` setting: Optical, FET,
 Vari-Mu, VCA or Neve. These affect the voicing and speed of compressor
 behavior.
+
+There are controls to adjust L and R channel volume levels (`LVol` and `RVol`,
+respectively). These are especially useful on Sum or 0Sum modes where both
+channels are mixed down before output.
 
 ## Build and test
 
