@@ -296,7 +296,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
     attack_norm = zoom_param_norm01(params[7], 0.20f);
     release_norm = zoom_param_norm01(params[8], 0.45f);
     {
-        float makeup_norm = zoom_param_norm01(params[9], 0.0f);
+        float makeup_norm = zoom_param_norm01(params[13], 0.0f);
         makeup = graph_axis_level(24.0f * makeup_norm * makeup_norm);
     }
     output_mode = output_mode_from_knob(params[10]);
@@ -304,7 +304,7 @@ void Fx_DLY_SideCmp(uintptr_t *ctx)
                  zoom_param_norm01(params[11], 0.5f);
     right_level = 4.0f * zoom_param_norm01(params[12], 0.5f) *
                   zoom_param_norm01(params[12], 0.5f);
-    model = model_from_knob(params[13]);
+    model = model_from_knob(params[9]);
     if (st->active_model != model) {
         st->optical_fast = st->optical_slow = 0.0f;
         st->fet_env = st->varimu_env = st->vca_env = st->neve_env = 0.0f;
@@ -459,7 +459,7 @@ int ZDL_GetLabel_1(unsigned int value, char *out)
     return 1;
 }
 
-int ZDL_GetLabel_8(unsigned int value, char *out)
+int ZDL_GetLabel_4(unsigned int value, char *out)
 {
     return model_label(value, out);
 }
