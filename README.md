@@ -1,10 +1,13 @@
-<img width="512" height="366" alt="SideCmp" src="https://github.com/user-attachments/assets/d02331ce-3e79-416d-a9fc-96c54ad50667" />
+<img width="512" height="366" alt="SideCmp" src="https://github.com/user-attachments/assets/9d25e406-1a7b-4fe4-8163-790a9127351b" />
 
 # Pump It
 
 Pump It is a sidechain compressor for the Zoom MS-70CDR.
 Install `dist/SideCmp.ZDL` with [Zoom Effect Manager](https://zoomeffectmanager.com/en/download/).
 Back up the pedal's patches and effect list before installing custom effects.
+
+Hardware options for real-time, sidechained compression have been relatively limited or expensive before.
+Now you can now use this [staple sound of techno, house](https://youtu.be/pDmLr-uHP40?si=QF-APTjY30Ws-Bm-) and many other types of music live with only your MS-70CDR. 
 
 ## Mixdown Options and Routing (Mode setting)
 
