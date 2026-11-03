@@ -1,4 +1,4 @@
-<img width="512" height="366" alt="SideCmp" src="https://github.com/user-attachments/assets/9d25e406-1a7b-4fe4-8163-790a9127351b" />
+<img width="512" alt="SideCmp (1)" src="https://github.com/user-attachments/assets/d40de654-b022-44f0-b440-abe90dd893b9" />
 
 # Pump It
 
