@@ -28,7 +28,7 @@ with Div0, think of Pump It as replacing RTFM.
 
 Placing time-based effects like reverb and delay between Div0 and Pump it will 
 accentuate the ducking effect.`0Sum` then outputs a mixdown of both channels, 
-`0Par` outputs separate left/right signals.
+`0Par` outputs separate left/right signals. Note: you'll want to turn the R Channel on div0 to zero as usual whenever using div0.
 
 [Div0 is included in the Zoom Effects Manager, download that here](https://zoomeffectmanager.com/en/download/)
 
