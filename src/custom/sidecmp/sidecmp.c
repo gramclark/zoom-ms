@@ -7,7 +7,7 @@
 extern unsigned int _Fx_DLY_SideCmp_Info[];
 
 #define MAGIC 0x50495434u
-#define FXID  469u
+#define FXID  947u
 #define SR    44100.0f
 #define OUTPUT_CEILING 0.95f
 
