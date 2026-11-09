@@ -17,6 +17,7 @@ selection_art = (HERE / "selection_art.bin").read_bytes()
 assert len(selection_art) == 1024 and any(selection_art)
 assert len(manifest["params"]) == 9
 assert manifest["display_name"] == "Pump It"
+assert manifest["gid"] == 1 and manifest["fxid"] == 947
 assert [param["name"] for param in manifest["params"]] == [
     "Thrs", "Ratio", "Atk", "Rel", "Type", "Mode", "LVol", "RVol", "MkUp"
 ]
